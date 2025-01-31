@@ -1,6 +1,6 @@
 # SRI
 
-# OAW - Proyecto de Optimización de Aplicaciones Web curso Enero - Mayo 2024
+# OAW - Proyecto de Sistemas de Recomendación curso Enero - Mayo 2025
 
 ## Colaboradores
 Agradecemos la contribución de los siguientes miembros del equipo:
