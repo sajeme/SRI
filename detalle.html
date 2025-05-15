@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Detalle del Juego</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0d0d0d;
+      color: #f0f0f0;
+      margin: 0;
+      padding: 30px;
+    }
+
+    .container {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .poster {
+      max-width: 300px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
+      transition: transform 0.3s ease;
+    }
+
+    .poster:hover {
+      transform: scale(1.03);
+    }
+
+    .info {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .info h1 {
+      margin-top: 0;
+      font-size: 2em;
+      color: orange;
+    }
+
+    .info p {
+      line-height: 1.5;
+    }
+
+    .highlight {
+      color: #0df;
+    }
+
+    .btn {
+      background: transparent;
+      color: #0df;
+      border: 1px solid #0df;
+      padding: 8px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .tag {
+      background: #222;
+      border-radius: 5px;
+      padding: 4px 8px;
+      margin: 2px;
+      display: inline-block;
+      font-size: 0.9em;
+      color: orange;
+    }
+
+    .screenshots-container {
+      position: relative;
+      margin-top: 30px;
+    }
+
+    .screenshots {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding-bottom: 10px;
+    }
+
+    .screenshots img {
+      height: 180px;
+      border-radius: 8px;
+      transition: transform 0.3s ease;
+    }
+
+    .screenshots img:hover {
+      transform: scale(1.05);
+    }
+
+    .carousel-button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      color: white;
+      font-size: 1.5em;
+      padding: 10px;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .carousel-button.left {
+      left: 0;
+    }
+
+    .carousel-button.right {
+      right: 0;
+    }
+
+    .description-long {
+      margin-top: 20px;
+    }
+
+    iframe {
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .star-rating {
+      font-size: 2rem;
+      color: gold;
+      cursor: pointer;
+    }
+
+    .star-rating span {
+      color: lightgray;
+      display: inline-block;
+      transition: color 0.2s;
+      padding: 0 5px;
+    }
+
+    .star-rating:hover span,
+    .star-rating span:hover,
+    .star-rating span:hover ~ span {
+      color: gold;
+    }
+
+    pre {
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.9em;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <header style="background-color: #1a1a1a; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;">
+    <span style="color: orange; font-weight: bold;">🎮 GameSRI</span>
+    <div id="usuario-info" style="color: #f5f5f5;"></div>
+  </header>
+
+  <div class="container">
+    <img id="poster" class="poster" src="" alt="Portada del juego" />
+    <div class="info">
+      <h1 id="title">Cargando...</h1>
+      <p><strong>Géneros:</strong> <span id="genres"></span></p>
+      <p><strong>Precio:</strong> <span id="price"></span></p>
+      <p><strong>Descripción corta:</strong> <span id="overview"></span></p>
+      <p><strong>Fecha de lanzamiento:</strong> <span id="release-date" class="highlight"></span></p>
+      <button class="btn" onclick="history.back()">Regresar</button>
+    </div>
+  </div>
+
+  <div class="description-long">
+    <h2>Descripción detallada</h2>
+    <div id="description-html"></div>
+  </div>
+
+  <h2>Capturas</h2>
+  <div class="screenshots-container">
+    <button class="carousel-button left" onclick="scrollScreenshots(-300)">‹</button>
+    <div class="screenshots" id="screenshots"></div>
+    <button class="carousel-button right" onclick="scrollScreenshots(300)">›</button>
+  </div>
+
+  <h2>Videos</h2>
+  <div class="videos" id="videos"></div>
+
+  <div class="requirements">
+    <h2>Requisitos del sistema</h2>
+    <h4>Mínimos</h4>
+    <pre id="req-min"></pre>
+    <h4>Recomendados</h4>
+    <pre id="req-rec"></pre>
+  </div>
+
+  <h2>Tu valoración:</h2>
+  <div class="star-rating" id="user-rating">★★★★★</div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = urlParams.get('id');
+
+    function scrollScreenshots(offset) {
+      document.getElementById('screenshots').scrollBy({ left: offset, behavior: 'smooth' });
+    }
+
+    async function fetchGameDetails() {
+      const res = await fetch(`http://localhost:5000/steam_game/${gameId}`);
+      const data = await res.json();
+      const game = data[gameId]?.data;
+      if (!game) return;
+
+      document.getElementById('title').innerText = game.name;
+      document.getElementById('poster').src = game.header_image;
+      document.getElementById('overview').innerText = game.short_description || "Sin descripción";
+      document.getElementById('release-date').innerText = game.release_date?.date || "Desconocida";
+      document.getElementById('price').innerText = game.is_free ? "Gratis" : (game.price_overview?.final_formatted || "No disponible");
+      document.getElementById('genres').innerHTML = game.genres?.map(g => `<span class="tag">${g.description}</span>`).join(' ') || "Sin géneros";
+      document.getElementById('description-html').innerHTML = game.detailed_description || "<em>No disponible</em>";
+
+      const ssContainer = document.getElementById('screenshots');
+      game.screenshots?.forEach(ss => {
+        const img = document.createElement('img');
+        img.src = ss.path_thumbnail;
+        ssContainer.appendChild(img);
+      });
+
+      const videoContainer = document.getElementById('videos');
+      game.movies?.forEach(movie => {
+        const iframe = document.createElement('iframe');
+        iframe.src = movie.webm?.max || movie.mp4?.max;
+        iframe.width = "320";
+        iframe.height = "180";
+        iframe.allow = "autoplay; fullscreen";
+        videoContainer.appendChild(iframe);
+      });
+
+      document.getElementById('req-min').innerText = game.pc_requirements?.minimum?.replace(/<[^>]+>/g, '') || "No disponible";
+      document.getElementById('req-rec').innerText = game.pc_requirements?.recommended?.replace(/<[^>]+>/g, '') || "No disponible";
+    }
+
+    function setupRatingStars() {
+      const container = document.getElementById('user-rating');
+      container.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const span = document.createElement('span');
+        span.innerText = '★';
+        span.dataset.value = i;
+        container.appendChild(span);
+      }
+
+      container.addEventListener('click', (e) => {
+        if (e.target.tagName === 'SPAN') {
+          const rating = e.target.dataset.value;
+          const usuario = localStorage.getItem('usuario');
+          if (!usuario) return alert("No hay usuario registrado.");
+
+          fetch("http://localhost:5000/guardar_valoraciones", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ usuario, valoraciones: { [gameId]: parseInt(rating) } })
+          }).then(res => res.json()).then(data => alert(data.mensaje || "Valoración guardada"))
+            .catch(err => console.error("Error al guardar valoración", err));
+        }
+      });
+    }
+
+    function actualizarHeaderUsuario() {
+      const usuario = localStorage.getItem('usuario');
+      const contenedor = document.getElementById('usuario-info');
+      if (usuario) {
+        contenedor.innerHTML = `Hola, <strong>${usuario}</strong> 
+          <button onclick="logout()" style="margin-left:10px; padding: 4px 10px; cursor:pointer; border-radius:5px; background:#444; color:white; border:none;">
+            Cerrar sesión
+          </button>`;
+      } else {
+        const nuevo = prompt("Ingresa tu nombre:");
+        if (nuevo) {
+          localStorage.setItem('usuario', nuevo);
+          actualizarHeaderUsuario();
+        } else {
+          alert("Debes ingresar un nombre para continuar.");
+          location.reload();
+        }
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('usuario');
+      location.reload();
+    }
+
+    fetchGameDetails();
+    setupRatingStars();
+    actualizarHeaderUsuario();
+  </script>
+</body>
+</html>

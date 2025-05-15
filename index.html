@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cartelera de Películas</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      color: #f5f5f5;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 20px;
+      color: orange;
+    }
+
+    .movie-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      padding: 20px;
+    }
+
+   .movie-card {
+  position: relative;
+  background-color: #1c1c1c;
+  width: 220px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(255, 165, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.movie-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 165, 0, 0.4);
+}
+
+.movie-card img {
+  width: 100%;
+  display: block;
+}
+
+.movie-card h3 {
+  margin: 0;
+  padding: 10px;
+  background: #222;
+  font-size: 1em;
+  text-align: center;
+}
+
+.price-tag {
+  position: absolute;
+  bottom: 35px;
+  right: 0;
+  background-color: rgba(255, 165, 0, 0.9);
+  color: #000;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-top-left-radius: 8px;
+  font-size: 0.9em;
+}
+
+.genre-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: white;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  padding: 10px;
+  font-size: 0.85em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.movie-card:hover .genre-overlay {
+  opacity: 1;
+}
+
+  </style>
+</head>
+<body>
+  <header style="background-color: #222; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;">
+    <span style="color: orange; font-weight: bold;">🎬 MovieSRI</span>
+    <div id="usuario-info" style="color: #f5f5f5;"></div>
+  </header>
+  
+  <h1>Cartelera</h1>
+  <div class="movie-container" id="movie-container"></div>
+
+  <script>
+    let currentPage = 1;
+    let loading = false;
+
+async function fetchGames() {
+  const res = await fetch('http://localhost:5000/steamspy/top');
+  const data = await res.json();
+  return Object.values(data);
+}
+
+
+
+
+
+async function fetchGameDetails(appid) {
+  const res = await fetch(`http://localhost:5000/steam_game/${appid}`);
+  const data = await res.json();
+  return data[appid].success ? data[appid].data : null;
+}
+
+async function fetchGenreForGame(appid) {
+  const res = await fetch(`http://localhost:5000/steamspy/details/${appid}`);
+  const data = await res.json();
+  return data.genres || 'Sin géneros';
+}
+
+function createGameCard(game) {
+  const card = document.createElement('div');
+  card.className = 'movie-card';
+
+  const headerImage = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`;
+
+  // Calcular porcentaje de aprobación real
+  const totalReviews = game.positive + game.negative;
+  const approvalPercent = totalReviews > 0
+    ? Math.round((game.positive * 100) / totalReviews)
+    : 'N/A';
+
+  const genres = game.genres || 'Sin géneros';
+
+  card.innerHTML = `
+    <img src="${headerImage}" alt="${game.name}" />
+    <div class="price-tag">${approvalPercent !== 'N/A' ? approvalPercent + '%' : 'Sin datos'}</div>
+    <div class="genre-overlay">${genres}</div>
+    <h3>${game.name}</h3>
+  `;
+
+  card.onclick = () => {
+  window.location.href = `detalle.html?id=${game.appid}`;
+};
+
+
+  return card;
+}
+
+let loaded = false;
+
+async function loadMoreGames() {
+  if (loading || loaded) return;
+  loading = true;
+
+  const games = await fetchGames(); // ya no necesitas offset
+  for (const game of games) {
+  const genres = await fetchGenreForGame(game.appid); 
+  game.genres = genres;
+
+  const card = createGameCard(game);
+  document.getElementById('movie-container').appendChild(card);
+}
+
+
+  loaded = true; // solo carga una vez (SteamSpy devuelve 100 fijos)
+  loading = false;
+}
+
+
+
+
+    // Infinite Scroll
+window.addEventListener('scroll', () => {
+  const scrollTop = document.documentElement.scrollTop;
+  const scrollHeight = document.documentElement.scrollHeight;
+  const clientHeight = document.documentElement.clientHeight;
+
+  if (scrollTop + clientHeight >= scrollHeight - 100) {
+    loadMoreGames();
+  }
+});
+
+loadMoreGames(); // Carga inicial
+
+
+  </script>
+
+  <script>
+    function actualizarHeaderUsuario() {
+      const usuario = localStorage.getItem('usuario');
+      const contenedor = document.getElementById('usuario-info');
+  
+      if (usuario) {
+        contenedor.innerHTML = `Hola, <strong>${usuario}</strong> 
+          <button onclick="logout()" style="margin-left:10px; padding: 4px 10px; cursor:pointer; border-radius:5px; background:#444; color:white; border:none;">
+            Cerrar sesión
+          </button>`;
+      } else {
+        const nuevo = prompt("Ingresa tu nombre:");
+        if (nuevo) {
+          localStorage.setItem('usuario', nuevo);
+          actualizarHeaderUsuario();
+        } else {
+          alert("Debes ingresar un nombre para continuar.");
+          location.reload();
+        }
+      }
+    }
+  
+    function logout() {
+      localStorage.removeItem('usuario');
+      location.reload();
+    }
+  
+    actualizarHeaderUsuario();
+  </script>
+   
+</body>
+</html>
