@@ -1,10 +1,14 @@
+
+
+import locale # Import locale for date parsing
+import dateparser # Import dateparser for flexible date parsing
 import json
 import pandas as pd
 import numpy as np
 import random
 from collections import defaultdict
 from typing import List, Dict, Any, Tuple
-
+from datetime import datetime # Import datetime for date parsing
 from flask import Flask, request, jsonify
 
 # Importar las bibliotecas específicas de cada módulo
@@ -19,6 +23,16 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from surprise import Dataset, Reader, KNNBasic, SVD
 
 
+# Configuración de la localización para parsear fechas con meses en español
+try:
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_TIME, 'es_ES')
+    except locale.Error:
+        print("Advertencia: No se pudo establecer la localización 'es_ES'. Las fechas pueden no parsearse correctamente sin dateparser.")
+
+
 app = Flask(__name__)
 
 # --- Variables Globales para cargar datos una sola vez ---
@@ -31,7 +45,7 @@ game_id_to_name: Dict[str, str] = {}
 name_to_game_id: Dict[str, str] = {}
 rules: pd.DataFrame = pd.DataFrame()
 
-# Para Cold Start
+# Para Cold Start (original) - keeping for reference, but new cold start will use juegos_dict etc.
 cold_start_recommender = None # Se inicializará como una instancia de ColdStartRecommender
 
 # Para Contenido (TF-IDF)
@@ -43,6 +57,12 @@ content_similarity_df: pd.DataFrame = pd.DataFrame()
 surprise_formatted_data: List[Tuple[int, int, float]] = []
 item_similarity_model = None
 trainset_global = None
+
+# --- Variables Globales para el algoritmo de Boosting (desde recommender_boosting_flask.py) ---
+juegos_dict: Dict = {} # Almacenará los datos de juegos procesados
+usuarios_dict: Dict = {} # Almacenará los datos de usuarios procesados
+juego_interacciones: Dict = defaultdict(list) # Almacenará interacciones por juego
+game_average_rating: Dict = {} # Almacenará la calificación promedio de los juegos
 
 
 # --- Funciones Auxiliares Comunes ---
@@ -65,6 +85,7 @@ def initialize_models_and_data():
     global cold_start_recommender
     global games_df_content, tfidf_matrix, content_similarity_df
     global surprise_formatted_data, item_similarity_model, trainset_global
+    global juegos_dict, usuarios_dict, juego_interacciones, game_average_rating # Nuevas variables globales
 
     print("Iniciando carga de datos y pre-cálculo de modelos...")
 
@@ -75,6 +96,49 @@ def initialize_models_and_data():
 
     if not (interacciones_data and datos_juegos_data and usuarios_data):
         print("Advertencia: No se pudieron cargar todos los archivos JSON necesarios. Algunas recomendaciones pueden no funcionar.")
+
+    # --- Preprocesamiento de datos para el algoritmo de Boosting (desde recommender_boosting_flask.py) ---
+    print("Preparando datos para el algoritmo de Boosting...")
+    if usuarios_data.get("usuarios"):
+        usuarios_dict.update({user["id"]: user for user in usuarios_data["usuarios"]})
+
+    for appid_str, game_info_raw in datos_juegos_data.items():
+        appid = int(appid_str)
+        
+        game_tags = [tag['description'].lower() for tag in game_info_raw.get('tags', [])]
+        game_categories = [cat.lower() for cat in game_info_raw.get('categorias', [])]
+        all_genres_tags = list(set(game_tags + game_categories)) # Combina tags y categorías
+
+        fecha_publicacion_str = game_info_raw.get("fecha_publicacion")
+        fecha_lanzamiento = None
+        if fecha_publicacion_str:
+            parsed_date = dateparser.parse(fecha_publicacion_str, languages=["es"])
+            if parsed_date:
+                fecha_lanzamiento = parsed_date.strftime("%Y-%m-%d")
+
+        processed_game_info = game_info_raw.copy()
+        processed_game_info["id_juego"] = appid
+        processed_game_info["generos"] = all_genres_tags
+        processed_game_info["fecha_lanzamiento"] = fecha_lanzamiento
+        processed_game_info.pop("fecha_publicacion", None)
+        processed_game_info.pop("tags", None)
+        processed_game_info.pop("categorias", None)
+
+        juegos_dict[appid] = processed_game_info
+
+    for user_interaction_set in interacciones_data.get("interacciones", []):
+        for interaction in user_interaction_set["interacciones"]:
+            game_id = interaction["id_juego"]
+            if game_id in juegos_dict:
+                juego_interacciones[game_id].append({"id_usuario": user_interaction_set["id"], **interaction})
+
+    for game_id, interactions in juego_interacciones.items():
+        valid_ratings = [inter["calificacion"] for inter in interactions if "calificacion" in inter]
+        if valid_ratings:
+            game_average_rating[game_id] = sum(valid_ratings) / len(valid_ratings)
+        else:
+            game_average_rating[game_id] = 0.0
+    print("Datos para el algoritmo de Boosting preparados.")
 
     # --- Inicialización para Apriori (recomendacion_asociacion.py) ---
     print("Preparando Apriori...")
@@ -189,8 +253,6 @@ def initialize_models_and_data():
 
         def recommend_for_user(self, user_id: int, min_n: int = 5, max_n: int = 10) -> List[Dict[str, Any]]:
             if user_id not in self.user_profiles:
-                # Modificación: En lugar de ValueError, devuelve un mensaje y lista vacía.
-                # Esto permite que el endpoint Flask maneje el 404 más limpiamente.
                 return []
                 
             user = self.user_profiles[user_id]
@@ -199,7 +261,6 @@ def initialize_models_and_data():
 
             scores: List[Tuple[str, float]] = []
             
-            # Obtener juegos ya interactuados por el usuario para no recomendarlos
             interacted_game_ids = set()
             for user_interaction_entry in interacciones_data.get('interacciones', []):
                 if user_interaction_entry.get('id') == user_id:
@@ -209,7 +270,7 @@ def initialize_models_and_data():
 
 
             for game_id, game in self.game_features.items():
-                if game_id in interacted_game_ids: # No recomendar juegos ya interactuados
+                if game_id in interacted_game_ids:
                     continue
                 if user_age < game['edad_minima']:
                     continue
@@ -236,10 +297,9 @@ def initialize_models_and_data():
             
             formatted_recommendations: List[Dict[str, Any]] = []
             for game_id, score in final_recommendations_raw:
-                # Incluir todos los campos del juego y añadir 'score' e 'id_user'
                 game_info = datos_juegos_data.get(game_id, {}).copy()
                 if game_info:
-                    game_info['id'] = game_id # Asegurar que el ID esté presente como string
+                    game_info['id'] = game_id
                     game_info['score'] = round(score, 2)
                     game_info['id_user'] = user_id
                     formatted_recommendations.append(game_info)
@@ -360,7 +420,6 @@ def recomendar_juegos_apriori(
                 game_name = game_id_to_name_map.get(game_id, f"Juego Desconocido ({game_id})")
                 if (interaction.get('calificacion', 0) >= 3.5 or interaction.get('like', False)):
                     juegos_gustados_usuario_nombres_set.add(game_name)
-                    # No añadiremos el juego completo aquí, sino solo lo necesario para `based_on_games`
                     juegos_gustados_usuario_info.append({
                         "id": game_id,
                         "nombre": game_name
@@ -395,19 +454,15 @@ def recomendar_juegos_apriori(
 
         for game_name, (confidence, based_on_games) in sorted_recommendations:
             game_id = name_to_game_id_map.get(game_name)
-            if game_id and game_id in datos_juegos_map: # Asegurarse de que el juego existe en datos_juegos_data
+            if game_id and game_id in datos_juegos_map:
                 game_data = datos_juegos_map[game_id].copy()
-                game_data['id'] = game_id # Asegurar que el ID esté presente como string
+                game_data['id'] = game_id
                 game_data['score'] = round(confidence, 2)
                 game_data['id_user'] = user_id
-                game_data['based_on_games'] = based_on_games # Incluir información de los juegos base
+                game_data['based_on_games'] = based_on_games
                 final_recomendaciones_info.append(game_data)
     else:
         print(f"No se encontraron recomendaciones basadas en reglas de asociación para el usuario {user_id}. Recurriendo a los juegos más populares.")
-        
-        # En caso de no haber recomendaciones Apriori, se puede considerar un fallback a cold-start o most_played
-        # Por ahora, simplemente devolverá una lista vacía si no hay reglas relevantes
-        # o los juegos ya han sido jugados.
         pass
 
     return final_recomendaciones_info
@@ -436,16 +491,14 @@ def recomendar_juegos_tfidf(user_id, all_interactions, all_games_data, content_s
     highly_rated_game_ids = []
     for interaction in user_interactions:
         game_id_str = str(interaction.get('id_juego'))
-        # Considerar juegos altamente calificados o con likes/horas jugadas
         if (interaction.get('calificacion', 0) >= 4.0 or interaction.get('like', False)) and interaction.get('horas_jugadas', 0) > 0:
             highly_rated_game_ids.append(game_id_str)
 
     if not highly_rated_game_ids:
-        # Modificación: Devuelve una lista vacía para que el endpoint Flask maneje el 404
         return []
 
     predicted_scores = {}
-    for game_id_to_predict in games_df_content.index: # Usar games_df_content.index que ya está cargado globalmente
+    for game_id_to_predict in games_df_content.index:
         if game_id_to_predict not in played_game_ids:
             sim_sum = 0
             weighted_score_sum = 0
@@ -463,7 +516,7 @@ def recomendar_juegos_tfidf(user_id, all_interactions, all_games_data, content_s
                     if current_rating > 0:
                         weighted_score_sum += similarity * current_rating
                         sim_sum += similarity
-                    else: # If no rating, assume a max rating for 'like' or 'horas_jugadas'
+                    else:
                         weighted_score_sum += similarity * 5
                         sim_sum += similarity
             
@@ -473,7 +526,6 @@ def recomendar_juegos_tfidf(user_id, all_interactions, all_games_data, content_s
     recommended_games_raw = sorted(predicted_scores.items(), key=lambda x: x[1], reverse=True)
     
     if not recommended_games_raw:
-        # Modificación: Devuelve una lista vacía para que el endpoint Flask maneje el 404
         return []
     
     final_recommendations_info = []
@@ -481,10 +533,9 @@ def recomendar_juegos_tfidf(user_id, all_interactions, all_games_data, content_s
     for game_id, score_value in recommended_games_raw:
         if count >= top_n:
             break
-        # Incluir todos los campos del juego y añadir 'score' e 'id_user'
         game_info = all_games_data.get(game_id, {}).copy()
         if game_info:
-            game_info['id'] = game_id # Asegurar que el ID esté presente como string
+            game_info['id'] = game_id
             game_info['score'] = round(float(score_value), 4)
             game_info['id_user'] = user_id
             final_recommendations_info.append(game_info)
@@ -524,10 +575,9 @@ def recommend_user_based(data_for_surprise: List[Tuple[int, int, float]], games_
 
     formatted_recommendations: List[Dict] = []
     for game_id, score in final_recommendations_raw:
-        # Incluir todos los campos del juego y añadir 'score' e 'id_user'
         game_info = games_raw_data.get(str(game_id), {}).copy()
         if game_info:
-            game_info['id'] = str(game_id) # Asegurar que el ID esté presente como string
+            game_info['id'] = str(game_id)
             game_info['score'] = round(score, 2)
             game_info['id_user'] = target_user_id
             formatted_recommendations.append(game_info)
@@ -564,10 +614,9 @@ def recommend_item_based(data_for_surprise: List[Tuple[int, int, float]], games_
 
     formatted_recommendations: List[Dict] = []
     for game_id, score in final_recommendations_raw:
-        # Incluir todos los campos del juego y añadir 'score' e 'id_user'
         game_info = games_raw_data.get(str(game_id), {}).copy()
         if game_info:
-            game_info['id'] = str(game_id) # Asegurar que el ID esté presente como string
+            game_info['id'] = str(game_id)
             game_info['score'] = round(score, 2)
             game_info['id_user'] = target_user_id
             formatted_recommendations.append(game_info)
@@ -576,8 +625,8 @@ def recommend_item_based(data_for_surprise: List[Tuple[int, int, float]], games_
 def get_similar_games(
     target_game_id: int,
     games_raw_data: Dict,
-    model: KNNBasic, # Se pasa el modelo pre-entrenado
-    trainset,        # Se pasa el trainset para obtener los inner_id
+    model: KNNBasic,
+    trainset,
     top_n: int = 10
 ) -> List[Dict]:
     try:
@@ -586,8 +635,6 @@ def get_similar_games(
         print(f"Advertencia: El juego con ID {target_game_id} no se encontró en el trainset. No se pueden obtener juegos similares.")
         return []
 
-    # get_neighbors ya excluye el propio ítem si k es mayor que el número de vecinos reales
-    # y si user_based es False. En este caso, k=top_n+1 para asegurarnos de obtener top_n juegos.
     neighbors_inner_ids = model.get_neighbors(target_game_inner_id, k=top_n + 1)
 
     similar_games_info: List[Dict] = []
@@ -595,13 +642,11 @@ def get_similar_games(
     for inner_id in neighbors_inner_ids:
         similar_game_id = trainset.to_raw_iid(inner_id)
         
-        # Calcular la similitud real
         similarity_score = model.sim[target_game_inner_id, inner_id]
 
-        # Incluir todos los campos del juego y añadir 'score' e 'id_game_base'
         game_info = games_raw_data.get(str(similar_game_id), {}).copy()
         if game_info:
-            game_info['id'] = str(similar_game_id) # Asegurar que el ID esté presente como string
+            game_info['id'] = str(similar_game_id)
             game_info['score'] = round(similarity_score, 4)
             game_info['id_game_base'] = target_game_id
             similar_games_info.append(game_info)
@@ -643,10 +688,9 @@ def recommend_svd_ranking(data_for_surprise: List[Tuple[int, int, float]], games
 
     formatted_recommendations: List[Dict] = []
     for game_id, score in final_recommendations_raw:
-        # Incluir todos los campos del juego y añadir 'score' e 'id_user'
         game_info = games_raw_data.get(str(game_id), {}).copy()
         if game_info:
-            game_info['id'] = str(game_id) # Asegurar que el ID esté presente como string
+            game_info['id'] = str(game_id)
             game_info['score'] = round(score, 2)
             game_info['id_user'] = target_user_id
             formatted_recommendations.append(game_info)
@@ -654,12 +698,12 @@ def recommend_svd_ranking(data_for_surprise: List[Tuple[int, int, float]], games
 
 # --- Desde recomendaciones_globales.py ---
 def get_most_played_games(interacciones_data_loaded: Dict, datos_juegos_data_loaded: Dict, limit=10):
-    game_playtime = defaultdict(float) # Usar horas jugadas si están disponibles, sino solo menciones
+    game_playtime = defaultdict(float)
     for user_interaction in interacciones_data_loaded.get("interacciones", []):
         for interaction in user_interaction.get("interacciones", []):
             game_id = str(interaction.get("id_juego"))
             hours_played = interaction.get("horas_jugadas", 0.0)
-            game_playtime[game_id] += hours_played if hours_played > 0 else 1 # Si no hay horas, contar como 1 interacción
+            game_playtime[game_id] += hours_played if hours_played > 0 else 1
 
     sorted_games_by_playtime = sorted(game_playtime.items(), key=lambda item: item[1], reverse=True)
 
@@ -667,8 +711,8 @@ def get_most_played_games(interacciones_data_loaded: Dict, datos_juegos_data_loa
     for game_id, score_value in sorted_games_by_playtime[:limit]:
         if game_id in datos_juegos_data_loaded:
             game_info = datos_juegos_data_loaded[game_id].copy()
-            game_info['id'] = game_id # Asegurar que el ID esté presente como string
-            game_info['score'] = round(score_value, 2) # El score es la suma de horas jugadas o interacciones
+            game_info['id'] = game_id
+            game_info['score'] = round(score_value, 2)
             top_played_games.append(game_info)
     return top_played_games
 
@@ -701,10 +745,103 @@ def get_top_rated_games(interacciones_data_loaded: Dict, datos_juegos_data_loade
     for game_id, score_value in sorted_games_by_average_rating[:limit]:
         if game_id in datos_juegos_data_loaded:
             game_info = datos_juegos_data_loaded[game_id].copy()
-            game_info['id'] = game_id # Asegurar que el ID esté presente como string
-            game_info['score'] = round(score_value, 2) # El score es la calificación promedio
+            game_info['id'] = game_id
+            game_info['score'] = round(score_value, 2)
             top_rated_games.append(game_info)
     return top_rated_games
+
+# --- Función de Recomendación General con Boosting (desde recommender_boosting_flask.py) ---
+def get_general_cold_start_recommendations(
+    num_recommendations=5,
+    target_category=None,
+    date_start=None,
+    date_end=None,
+    category_boost_factor=1.5,
+    date_boost_factor=1.2,
+    strict_category_filter=False,
+    strict_date_filter=False
+):
+    candidate_games_scores = {}
+
+    if target_category:
+        target_category = target_category.lower()
+
+    parsed_start_date = None
+    parsed_end_date = None
+    if date_start and date_end:
+        try:
+            parsed_start_date = datetime.strptime(date_start, "%Y-%m-%d")
+            parsed_end_date = datetime.strptime(date_end, "%Y-%m-%d")
+        except ValueError:
+            print(f"Error: Formato de fecha inválido para el rango {date_start} a {date_end}. Usa 'YYYY-MM-DD'.")
+            return []
+
+    for game_id, game_info in juegos_dict.items(): # Usa el global juegos_dict
+        base_score = game_average_rating.get(game_id, 0.0) # Usa el global game_average_rating
+
+        category_match = False
+        if target_category:
+            game_genres = set(game_info.get("generos", []))
+            if target_category in game_genres:
+                category_match = True
+                base_score *= category_boost_factor
+
+        date_match = False
+        if parsed_start_date and parsed_end_date:
+            game_release_date_str = game_info.get("fecha_lanzamiento")
+            if game_release_date_str:
+                try:
+                    game_release_date_obj = datetime.strptime(game_release_date_str, "%Y-%m-%d")
+                    if parsed_start_date <= game_release_date_obj <= parsed_end_date:
+                        date_match = True
+                        base_score *= date_boost_factor
+                except ValueError:
+                    pass
+
+        should_include = True
+        if strict_category_filter and not category_match:
+            should_include = False
+        if strict_date_filter and not date_match:
+            should_include = False
+        
+        if should_include:
+            candidate_games_scores[game_id] = base_score
+
+    sorted_recommendations = sorted(candidate_games_scores.items(), key=lambda item: item[1], reverse=True)
+    
+    final_recs = []
+    for game_id, score in sorted_recommendations:
+        game_info = juegos_dict.get(game_id, {})
+        
+        detailed_game_rec = {
+            "appid": game_id,
+            "nombre": game_info.get("nombre", "Desconocido"),
+            "descripcion_corta": game_info.get("descripcion_corta", "N/A"),
+            "descripcion_larga": game_info.get("descripcion_larga", "N/A"),
+            "edad_minima": game_info.get("edad_minima", "N/A"),
+            "generos": game_info.get("generos", []),
+            "capturas": game_info.get("capturas", []),
+            "portada": game_info.get("portada", "N/A"),
+            "fondo": game_info.get("fondo", "N/A"),
+            "link_juego": game_info.get("link_juego", "N/A"),
+            "fecha_lanzamiento": game_info.get("fecha_lanzamiento", "N/A"),
+            "precio": game_info.get("precio", "N/A"),
+            "resumen_precio": game_info.get("resumen_precio", {}),
+            "desarrolladores": game_info.get("desarrolladores", []),
+            "publicadores": game_info.get("publicadores", []),
+            "plataformas": game_info.get("plataformas", []),
+            "requisitos_pc": game_info.get("requisitos_pc", {}),
+            "puntuacion_final": round(score, 2)
+        }
+        final_recs.append(detailed_game_rec)
+
+        if len(final_recs) >= num_recommendations:
+            break
+            
+    if not final_recs:
+        return []
+
+    return final_recs
 
 
 # --- Endpoints de Flask unificados ---
@@ -774,7 +911,6 @@ def get_cold_start_recommendations_endpoint(user_id):
         return jsonify({"error": "El sistema de recomendación Cold Start no está inicializado."}), 500
 
     try:
-        # Verificar si el usuario existe antes de intentar recomendar
         user_exists = any(u['id'] == user_id for u in usuarios_data.get('usuarios', []))
         if not user_exists:
             return jsonify({"error": f"El usuario con ID {user_id} no se encuentra en la base de datos."}), 404
@@ -799,7 +935,6 @@ def user_content_recommendations_endpoint(user_id):
     Endpoint para obtener recomendaciones de juegos basadas en contenido
     para un usuario específico.
     """
-    # Verificar si el usuario existe
     user_exists = any(u['id'] == user_id for u in usuarios_data.get('usuarios', []))
     if not user_exists:
         return jsonify({"error": f"El usuario con ID {user_id} no se encuentra en la base de datos."}), 404
@@ -827,7 +962,6 @@ def get_user_based_recommendations_endpoint(user_id):
     if not surprise_formatted_data:
         return jsonify({"error": "Datos no cargados para recomendaciones colaborativas."}), 500
 
-    # Verificar si el usuario existe
     user_exists = any(u['id'] == user_id for u in usuarios_data.get('usuarios', []))
     if not user_exists:
         return jsonify({"error": f"El usuario con ID {user_id} no se encuentra en la base de datos."}), 404
@@ -846,7 +980,6 @@ def get_item_based_recommendations_endpoint(user_id):
     if not surprise_formatted_data:
         return jsonify({"error": "Datos no cargados para recomendaciones colaborativas."}), 500
 
-    # Verificar si el usuario existe
     user_exists = any(u['id'] == user_id for u in usuarios_data.get('usuarios', []))
     if not user_exists:
         return jsonify({"error": f"El usuario con ID {user_id} no se encuentra en la base de datos."}), 404
@@ -865,7 +998,6 @@ def get_svd_recommendations_endpoint(user_id):
     if not surprise_formatted_data:
         return jsonify({"error": "Datos no cargados para recomendaciones colaborativas."}), 500
 
-    # Verificar si el usuario existe
     user_exists = any(u['id'] == user_id for u in usuarios_data.get('usuarios', []))
     if not user_exists:
         return jsonify({"error": f"El usuario con ID {user_id} no se encuentra en la base de datos."}), 404
@@ -893,6 +1025,42 @@ def get_similar_games_endpoint_consolidated(game_id):
         return jsonify({"message": f"No se encontraron juegos similares para el juego ID: {game_id}."}), 404
 
     return jsonify({"target_game_id": game_id, "similar_games": similar_games})
+
+# --- Nuevos Endpoints de Boosting (desde recommender_boosting_flask.py) ---
+@app.route('/recommend/rpg', methods=['GET'])
+def recommend_rpg_games():
+    """
+    Endpoint para recomendar juegos de 'rol' con boosting, sin filtro de fecha.
+    """
+    recommendations = get_general_cold_start_recommendations(
+        num_recommendations=5,
+        target_category="rol",
+        category_boost_factor=2.0, # Strong boost for RPGs
+        strict_category_filter=False # Don't strictly filter, just boost matching ones
+    )
+    if not recommendations:
+        return jsonify({"message": "No se encontraron recomendaciones de juegos de rol."}), 404
+    return jsonify({"recommendations": recommendations}) # Wrapped in "recommendations" key
+
+@app.route('/recommend/action2025', methods=['GET'])
+def recommend_action_2025_games():
+    """
+    Endpoint para recomendar juegos de 'acción' lanzados entre 2025-01-01 y 2025-05-22.
+    """
+    recommendations = get_general_cold_start_recommendations(
+        num_recommendations=5,
+        target_category="acción",
+        date_start="2025-01-01",
+        date_end="2025-05-22",
+        category_boost_factor=1.5, # Boost for action games
+        date_boost_factor=1.8, # Strong boost for date range
+        strict_category_filter=False, # Don't strictly filter action, just boost
+        strict_date_filter=True # Strictly filter by date range
+    )
+    if not recommendations:
+        return jsonify({"message": "No se encontraron recomendaciones de juegos de acción para el período especificado."}), 404
+    return jsonify({"recommendations": recommendations}) # Wrapped in "recommendations" key
+
 
 # Ruta raíz para verificar que la API está activa
 @app.route('/', methods=['GET'])

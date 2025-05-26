@@ -3,7 +3,7 @@
     {
       "id": 1,
       "nombre": "Juan Pérez",
-      "edad": 25,
+      "edad": 16,
       "generos_favoritos": ["acción", "shooter", "cooperativo"]
     },
     {
@@ -46,7 +46,7 @@
       "id": 8,
       "nombre": "Valeria Castro",
       "edad": 26,
-      "generos_favoritos": ["acción-aventura", "sigilo", "narrativo"]
+      "generos_favoritos": ["acción", "aventura", "sigilo", "narrativo"]
     },
     {
       "id": 9,
@@ -239,6 +239,298 @@
       "nombre": "Paola Vargas",
       "edad": 27,
       "generos_favoritos": ["acción", "combate", "ciencia ficción"]
+    },
+    {
+      "id": 41,
+      "nombre": "Ricardo Pérez",
+      "edad": 38,
+      "generos_favoritos": [
+        "indie",
+        "conducción",
+        "rol"
+      ]
+    },
+    {
+      "id": 42,
+      "nombre": "Laura Domínguez",
+      "edad": 22,
+      "generos_favoritos": [
+        "rompecabezas",
+        "shooter",
+        "construcción"
+      ]
+    },
+    {
+      "id": 43,
+      "nombre": "Gustavo Fernández",
+      "edad": 42,
+      "generos_favoritos": [
+        "horror",
+        "narrativo",
+        "mundo abierto"
+      ]
+    },
+    {
+      "id": 44,
+      "nombre": "Diana Ramírez",
+      "edad": 39,
+      "generos_favoritos": [
+        "simulación",
+        "combate"
+      ]
+    },
+    {
+      "id": 45,
+      "nombre": "Emilio Jiménez",
+      "edad": 24,
+      "generos_favoritos": [
+        "ciencia ficción",
+        "supervivencia",
+        "sigilo"
+      ]
+    },
+    {
+      "id": 46,
+      "nombre": "Beatriz Vega",
+      "edad": 33,
+      "generos_favoritos": [
+        "gestión",
+        "fantasia"
+      ]
+    },
+    {
+      "id": 47,
+      "nombre": "Sergio Torres",
+      "edad": 20,
+      "generos_favoritos": [
+        "caza de monstruos",
+        "terror"
+      ]
+    },
+    {
+      "id": 48,
+      "nombre": "Helena Alonso",
+      "edad": 37,
+      "generos_favoritos": [
+        "estrategia",
+        "lucha",
+        "historia"
+      ]
+    },
+    {
+      "id": 49,
+      "nombre": "Ignacio Guerrero",
+      "edad": 31,
+      "generos_favoritos": [
+        "casual",
+        "acción",
+        "multijugador"
+      ]
+    },
+    {
+      "id": 50,
+      "nombre": "Julia Ibáñez",
+      "edad": 28,
+      "generos_favoritos": [
+        "exploración",
+        "deducción social"
+      ]
+    },
+    {
+      "id": 51,
+      "nombre": "Kevin Hernández",
+      "edad": 26,
+      "generos_favoritos": [
+        "competitivo",
+        "shooter táctico",
+        "battle royale"
+      ]
+    },
+    {
+      "id": 52,
+      "nombre": "Nerea Serrano",
+      "edad": 30,
+      "generos_favoritos": [
+        "sandbox",
+        "aventura"
+      ]
+    },
+    {
+      "id": 53,
+      "nombre": "Óscar Quintero",
+      "edad": 44,
+      "generos_favoritos": [
+        "mundo abierto",
+        "acción-aventura"
+      ]
+    },
+    {
+      "id": 54,
+      "nombre": "Paula Blanco",
+      "edad": 19,
+      "generos_favoritos": [
+        "indie",
+        "historia"
+      ]
+    },
+    {
+      "id": 55,
+      "nombre": "Quique Castañeda",
+      "edad": 36,
+      "generos_favoritos": [
+        "simulación",
+        "gestión",
+        "casual"
+      ]
+    },
+    {
+      "id": 56,
+      "nombre": "Raquel Espinoza",
+      "edad": 21,
+      "generos_favoritos": [
+        "supervivencia",
+        "shooter",
+        "horror"
+      ]
+    },
+    {
+      "id": 57,
+      "nombre": "Uriel Domínguez",
+      "edad": 40,
+      "generos_favoritos": [
+        "rol",
+        "fantasía",
+        "táctico"
+      ]
+    },
+    {
+      "id": 58,
+      "nombre": "Valentina Hernández",
+      "edad": 29,
+      "generos_favoritos": [
+        "acción",
+        "conducción",
+        "mundo abierto"
+      ]
+    },
+    {
+      "id": 59,
+      "nombre": "Walter Jiménez",
+      "edad": 35,
+      "generos_favoritos": [
+        "caza de monstruos",
+        "cooperativo"
+      ]
+    },
+    {
+      "id": 60,
+      "nombre": "Ximena Pérez",
+      "edad": 23,
+      "generos_favoritos": [
+        "lucha",
+        "competitivo",
+        "acción"
+      ]
+    },
+    {
+      "id": 61,
+      "nombre": "Yago Quintero",
+      "edad": 32,
+      "generos_favoritos": [
+        "construcción",
+        "sandbox",
+        "gestión"
+      ]
+    },
+    {
+      "id": 62,
+      "nombre": "Zoe Ramírez",
+      "edad": 27,
+      "generos_favoritos": [
+        "ciencia ficción",
+        "exploración",
+        "narrativo"
+      ]
+    },
+    {
+      "id": 63,
+      "nombre": "Alejandro Serrano",
+      "edad": 41,
+      "generos_favoritos": [
+        "misterio",
+        "deducción social",
+        "casual"
+      ]
+    },
+    {
+      "id": 64,
+      "nombre": "Cristian Torres",
+      "edad": 25,
+      "generos_favoritos": [
+        "magia",
+        "aventura",
+        "fantasía"
+      ]
+    },
+    {
+      "id": 65,
+      "nombre": "Fabiola Vega",
+      "edad": 30,
+      "generos_favoritos": [
+        "western",
+        "acción",
+        "mundo abierto"
+      ]
+    },
+    {
+      "id": 66,
+      "nombre": "Juan Alonso",
+      "edad": 22,
+      "generos_favoritos": [
+        "rompecabezas",
+        "indie",
+        "casual"
+      ]
+    },
+    {
+      "id": 67,
+      "nombre": "Ana Blanco",
+      "edad": 39,
+      "generos_favoritos": [
+        "terror",
+        "horror",
+        "supervivencia"
+      ]
+    },
+    {
+      "id": 68,
+      "nombre": "Carlos Castañeda",
+      "edad": 28,
+      "generos_favoritos": [
+        "combate",
+        "acción",
+        "shooter táctico"
+      ]
+    },
+    {
+      "id": 69,
+      "nombre": "Sofía Domínguez",
+      "edad": 34,
+      "generos_favoritos": [
+        "estrategia",
+        "táctico",
+        "rol"
+      ]
+    },
+    {
+      "id": 70,
+      "nombre": "Pedro Espinoza",
+      "edad": 26,
+      "generos_favoritos": [
+        "sigilo",
+        "acción-aventura",
+        "narrativo"
+      ]
     }
   ]
 }

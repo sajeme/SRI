@@ -319,6 +319,636 @@
         { "id_juego": 1085660, "calificacion": 3.9, "like": false, "horas_jugadas": 15 },
         { "id_juego": 1172470, "calificacion": 4.1, "like": true, "horas_jugadas": 20 }
       ]
-    }
+    },
+    {
+    "id": 41,
+    "interacciones": [
+      {
+        "id_juego": 3314070,
+        "calificacion": 3.7,
+        "like": false,
+        "horas_jugadas": 100
+      },
+      {
+        "id_juego": 1172470,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 36
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "interacciones": [
+      {
+        "id_juego": 2016460,
+        "calificacion": 4.3,
+        "like": true,
+        "horas_jugadas": 41
+      },
+      {
+        "id_juego": 1086940,
+        "calificacion": 3.1,
+        "like": false,
+        "horas_jugadas": 57
+      }
+    ]
+  },
+  {
+    "id": 43,
+    "interacciones": [
+      {
+        "id_juego": 1693980,
+        "calificacion": 4.8,
+        "like": true,
+        "horas_jugadas": 35
+      },
+      {
+        "id_juego": 1085660,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 38
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "interacciones": [
+      {
+        "id_juego": 2246340,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 81
+      },
+      {
+        "id_juego": 1286830,
+        "calificacion": 4.3,
+        "like": true,
+        "horas_jugadas": 86
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "interacciones": [
+      {
+        "id_juego": 3559850,
+        "calificacion": 4.6,
+        "like": true,
+        "horas_jugadas": 29
+      },
+      {
+        "id_juego": 2442460,
+        "calificacion": 4.2,
+        "like": true,
+        "horas_jugadas": 63
+      },
+      {
+        "id_juego": 2012190,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 53
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "interacciones": [
+      {
+        "id_juego": 1593500,
+        "calificacion": 4.8,
+        "like": true,
+        "horas_jugadas": 55
+      },
+      {
+        "id_juego": 570,
+        "calificacion": 3.7,
+        "like": false,
+        "horas_jugadas": 83
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "interacciones": [
+      {
+        "id_juego": 1430190,
+        "calificacion": 3.6,
+        "like": false,
+        "horas_jugadas": 78
+      },
+      {
+        "id_juego": 1599340,
+        "calificacion": 4.8,
+        "like": true,
+        "horas_jugadas": 45
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "interacciones": [
+      {
+        "id_juego": 1245620,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 75
+      },
+      {
+        "id_juego": 2457220,
+        "calificacion": 3.2,
+        "like": false,
+        "horas_jugadas": 25
+      },
+      {
+        "id_juego": 1144200,
+        "calificacion": 4.1,
+        "like": true,
+        "horas_jugadas": 96
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "interacciones": [
+      {
+        "id_juego": 990080,
+        "calificacion": 4.6,
+        "like": true,
+        "horas_jugadas": 17
+      },
+      {
+        "id_juego": 239140,
+        "calificacion": 4.6,
+        "like": true,
+        "horas_jugadas": 50
+      },
+      {
+        "id_juego": 1466060,
+        "calificacion": 4.3,
+        "like": true,
+        "horas_jugadas": 70
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "interacciones": [
+      {
+        "id_juego": 2754380,
+        "calificacion": 4.4,
+        "like": true,
+        "horas_jugadas": 42
+      },
+      {
+        "id_juego": 252490,
+        "calificacion": 3.9,
+        "like": false,
+        "horas_jugadas": 35
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "interacciones": [
+      {
+        "id_juego": 730,
+        "calificacion": 3.4,
+        "like": false,
+        "horas_jugadas": 72
+      },
+      {
+        "id_juego": 2001120,
+        "calificacion": 4.9,
+        "like": true,
+        "horas_jugadas": 86
+      },
+      {
+        "id_juego": 2140100,
+        "calificacion": 4.8,
+        "like": true,
+        "horas_jugadas": 72
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "interacciones": [
+      {
+        "id_juego": 892970,
+        "calificacion": 4.1,
+        "like": true,
+        "horas_jugadas": 24
+      },
+      {
+        "id_juego": 2442460,
+        "calificacion": 4.9,
+        "like": true,
+        "horas_jugadas": 90
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "interacciones": [
+      {
+        "id_juego": 1085660,
+        "calificacion": 4.0,
+        "like": true,
+        "horas_jugadas": 17
+      },
+      {
+        "id_juego": 2016460,
+        "calificacion": 3.9,
+        "like": false,
+        "horas_jugadas": 82
+      },
+      {
+        "id_juego": 1086940,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 65
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "interacciones": [
+      {
+        "id_juego": 1817070,
+        "calificacion": 4.7,
+        "like": true,
+        "horas_jugadas": 84
+      },
+      {
+        "id_juego": 2754380,
+        "calificacion": 4.4,
+        "like": true,
+        "horas_jugadas": 46
+      },
+      {
+        "id_juego": 1593500,
+        "calificacion": 4.8,
+        "like": true,
+        "horas_jugadas": 7
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "interacciones": [
+      {
+        "id_juego": 3314070,
+        "calificacion": 4.6,
+        "like": true,
+        "horas_jugadas": 71
+      },
+      {
+        "id_juego": 2545360,
+        "calificacion": 3.5,
+        "like": false,
+        "horas_jugadas": 26
+      },
+      {
+        "id_juego": 3314060,
+        "calificacion": 4.1,
+        "like": true,
+        "horas_jugadas": 100
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "interacciones": [
+      {
+        "id_juego": 1466060,
+        "calificacion": 4.8,
+        "like": true,
+        "horas_jugadas": 33
+      },
+      {
+        "id_juego": 239140,
+        "calificacion": 4.7,
+        "like": true,
+        "horas_jugadas": 60
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "interacciones": [
+      {
+        "id_juego": 1693980,
+        "calificacion": 4.0,
+        "like": true,
+        "horas_jugadas": 81
+      },
+      {
+        "id_juego": 1771300,
+        "calificacion": 3.0,
+        "like": false,
+        "horas_jugadas": 66
+      },
+      {
+        "id_juego": 990080,
+        "calificacion": 3.4,
+        "like": false,
+        "horas_jugadas": 24
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "interacciones": [
+      {
+        "id_juego": 1086940,
+        "calificacion": 4.4,
+        "like": true,
+        "horas_jugadas": 51
+      },
+      {
+        "id_juego": 1245620,
+        "calificacion": 4.6,
+        "like": true,
+        "horas_jugadas": 63
+      },
+      {
+        "id_juego": 2104890,
+        "calificacion": 4.8,
+        "like": true,
+        "horas_jugadas": 49
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "interacciones": [
+      {
+        "id_juego": 1938090,
+        "calificacion": 4.1,
+        "like": true,
+        "horas_jugadas": 27
+      },
+      {
+        "id_juego": 1599340,
+        "calificacion": 3.4,
+        "like": false,
+        "horas_jugadas": 46
+      },
+      {
+        "id_juego": 2246340,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 87
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "interacciones": [
+      {
+        "id_juego": 570,
+        "calificacion": 4.0,
+        "like": true,
+        "horas_jugadas": 46
+      },
+      {
+        "id_juego": 1091500,
+        "calificacion": 3.5,
+        "like": false,
+        "horas_jugadas": 96
+      },
+      {
+        "id_juego": 1172470,
+        "calificacion": 4.7,
+        "like": true,
+        "horas_jugadas": 35
+      }
+    ]
+  },
+  {
+    "id": 61,
+    "interacciones": [
+      {
+        "id_juego": 3314060,
+        "calificacion": 4.1,
+        "like": true,
+        "horas_jugadas": 60
+      },
+      {
+        "id_juego": 1326470,
+        "calificacion": 4.2,
+        "like": true,
+        "horas_jugadas": 5
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "interacciones": [
+      {
+        "id_juego": 2442460,
+        "calificacion": 4.3,
+        "like": true,
+        "horas_jugadas": 89
+      },
+      {
+        "id_juego": 3559850,
+        "calificacion": 4.3,
+        "like": true,
+        "horas_jugadas": 36
+      },
+      {
+        "id_juego": 2012190,
+        "calificacion": 4.1,
+        "like": true,
+        "horas_jugadas": 45
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "interacciones": [
+      {
+        "id_juego": 252490,
+        "calificacion": 3.7,
+        "like": false,
+        "horas_jugadas": 96
+      },
+      {
+        "id_juego": 578080,
+        "calificacion": 4.0,
+        "like": true,
+        "horas_jugadas": 76
+      },
+      {
+        "id_juego": 2016460,
+        "calificacion": 4.7,
+        "like": true,
+        "horas_jugadas": 17
+      }
+    ]
+  },
+  {
+    "id": 64,
+    "interacciones": [
+      {
+        "id_juego": 271590,
+        "calificacion": 4.2,
+        "like": true,
+        "horas_jugadas": 36
+      },
+      {
+        "id_juego": 1361210,
+        "calificacion": 4.9,
+        "like": true,
+        "horas_jugadas": 81
+      },
+      {
+        "id_juego": 2246340,
+        "calificacion": 4.3,
+        "like": true,
+        "horas_jugadas": 73
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "interacciones": [
+      {
+        "id_juego": 2104890,
+        "calificacion": 3.9,
+        "like": false,
+        "horas_jugadas": 76
+      },
+      {
+        "id_juego": 2545360,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 15
+      },
+      {
+        "id_juego": 239140,
+        "calificacion": 4.7,
+        "like": true,
+        "horas_jugadas": 100
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "interacciones": [
+      {
+        "id_juego": 1144200,
+        "calificacion": 3.2,
+        "like": false,
+        "horas_jugadas": 60
+      },
+      {
+        "id_juego": 2754380,
+        "calificacion": 4.4,
+        "like": true,
+        "horas_jugadas": 34
+      },
+      {
+        "id_juego": 1593500,
+        "calificacion": 4.7,
+        "like": true,
+        "horas_jugadas": 96
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "interacciones": [
+      {
+        "id_juego": 1430190,
+        "calificacion": 4.7,
+        "like": true,
+        "horas_jugadas": 97
+      },
+      {
+        "id_juego": 239140,
+        "calificacion": 4.1,
+        "like": true,
+        "horas_jugadas": 96
+      },
+      {
+        "id_juego": 1286830,
+        "calificacion": 3.6,
+        "like": false,
+        "horas_jugadas": 14
+      }
+    ]
+  },
+  {
+    "id": 68,
+    "interacciones": [
+      {
+        "id_juego": 1172470,
+        "calificacion": 4.9,
+        "like": true,
+        "horas_jugadas": 13
+      },
+      {
+        "id_juego": 730,
+        "calificacion": 4.2,
+        "like": true,
+        "horas_jugadas": 94
+      },
+      {
+        "id_juego": 1091500,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 63
+      }
+    ]
+  },
+  {
+    "id": 69,
+    "interacciones": [
+      {
+        "id_juego": 1771300,
+        "calificacion": 4.7,
+        "like": true,
+        "horas_jugadas": 97
+      },
+      {
+        "id_juego": 990080,
+        "calificacion": 3.9,
+        "like": false,
+        "horas_jugadas": 65
+      },
+      {
+        "id_juego": 1086940,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 99
+      }
+    ]
+  },
+  {
+    "id": 70,
+    "interacciones": [
+      {
+        "id_juego": 3159330,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 45
+      },
+      {
+        "id_juego": 1938090,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 36
+      },
+      {
+        "id_juego": 1361210,
+        "calificacion": 3.7,
+        "like": false,
+        "horas_jugadas": 85
+      }
+    ]
+  }
   ]
 }
