@@ -949,6 +949,17 @@
         "horas_jugadas": 85
       }
     ]
+  },
+  {
+    "id": 71,
+    "interacciones": [
+      {
+        "id_juego": 892970,
+        "calificacion": 4.5,
+        "like": true,
+        "horas_jugadas": 40
+      }
+    ]
   }
   ]
 }

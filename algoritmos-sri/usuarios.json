@@ -531,6 +531,14 @@
         "acción-aventura",
         "narrativo"
       ]
-    }
+    },
+    {
+      "id": 71,
+      "nombre": "Pavo Rosaldo",
+      "edad": 20,
+      "generos_favoritos": [
+        "acción"
+      ]
+    }    
   ]
 }
