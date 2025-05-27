@@ -15,22 +15,22 @@ function updateDynamicTitles() {
   if (!n||!p||!a||!c) return console.error("Título dinámico no encontrado");
 
   // Lo Nuevo...
-  if (newAndNoteworthyRecType === 'apriori')      n.textContent = "Recomendaciones para ti";
-  else if (newAndNoteworthyRecType === 'cold-start') n.textContent = "Comienza tu Aventura";
+  if (newAndNoteworthyRecType === 'apriori')      n.textContent = "Juegos jugados por otros usuarios que te podrían interesar";
+  else if (newAndNoteworthyRecType === 'cold-start') n.textContent = "Basado en la información que nos proporcionaste de ti :)";
   else                                               n.textContent = "Lo Nuevo de 2025";
 
   // Populares...
-  if (popularRecType === 'association')            p.textContent = "Juegos Populares";
-  else if (popularRecType === 'top-rated-fallback') p.textContent = "Los Más Valorados Globalmente";
-  else                                               p.textContent = "Los más jugados";
+  if (popularRecType === 'association')            p.textContent = "De acuerdo a tus gustos";
+  else if (popularRecType === 'top-rated-fallback') p.textContent = "Los Más Valorados por los Usuarios";
+  else                                               p.textContent = "Los más Jugados por los Usuarios";
 
   // carousel aventura
-  if (adventureRecType === 'item-based')          a.textContent = "Basado en contenido";
-  else if (adventureRecType === 'top-rated-fallback') a.textContent = "Top Global";
+  if (adventureRecType === 'item-based')          a.textContent = "Recomendaciones por otros usuarios con preferencias similares a ti";
+  else if (adventureRecType === 'top-rated-fallback') a.textContent = "Los juegos mejor valorados por usuarios";
   // else se queda con el HTML por defecto
 
   // Acción carousel
-  if (accionRecType === 'content-based')          c.textContent = "Recomendado para Ti";
+  if (accionRecType === 'content-based')          c.textContent = "Recomendaciones basadas en las Historias que te gustan";
   // else se queda con el HTML por defecto
 }
 

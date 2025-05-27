@@ -700,6 +700,22 @@
       "generos_favoritos": [
         "acción"
       ]
-    }    
+    },
+    {
+      "id": 72,
+      "nombre": "joshua",
+      "edad": 30,
+      "generos_favoritos": [
+        "acción"
+      ]
+    },
+    {
+      "id": 73,
+      "nombre": "aler",
+      "edad": 20,
+      "generos_favoritos": [
+        "acción"
+      ]
+    }
   ]
 }
