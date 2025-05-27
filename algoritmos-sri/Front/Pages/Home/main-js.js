@@ -45,7 +45,10 @@ function buildSingleItemCarousel(containerId, gamesData) {
     gamesData.forEach((game, index) => {
         const activeClass = index === 0 ? 'active' : '';
         const imageUrl = game.portada || 'https://via.placeholder.com/1920x1080?text=No+Image';
-        const gameLink = `../Products/product.html?game_id=${game.id}`;
+        const gameId   = game.id  
+               || game.appid 
+               || game.game_id; 
+        const gameLink = `../Products/product.html?game_id=${gameId}`;
 
         indicatorsHtml += `<li data-target="#${containerId}" data-slide-to="${index}" class="${activeClass}"></li>`;
 
