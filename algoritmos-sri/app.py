@@ -10,6 +10,9 @@ from typing import List, Dict, Any, Tuple
 from datetime import datetime
 from flask import Flask, request, jsonify
 
+from flask import Flask
+from flask_cors import CORS, cross_origin
+
 # Importar las bibliotecas específicas de cada módulo
 from mlxtend.frequent_patterns import apriori, association_rules
 from sklearn.metrics.pairwise import cosine_similarity
@@ -26,7 +29,8 @@ except locale.Error:
         print("Advertencia: No se pudo establecer la localización 'es_ES'. Las fechas pueden no parsearse correctamente sin dateparser.")
 
 app = Flask(__name__)
-CORS(app)
+cors = CORS(app) # allow CORS for all domains on all routes.
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 # --- Funciones Auxiliares Comunes ---
 def load_json_data(filepath: str) -> Dict:
@@ -1171,10 +1175,16 @@ def login_usuario():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/games/<int:game_id>', methods=['GET'])
+@cross_origin()
 def get_game_by_id(game_id):
     """
     Endpoint para obtener los datos completos de un juego por su ID.
     """
+    datos_juegos_data: Dict = {}
+    juegos = load_json_data('datos_juegos.json')
+    datos_juegos_data = juegos
+
+    #datos_juegos_data: Dict = {}
     game_info = datos_juegos_data.get(str(game_id))
 
     if not game_info:
@@ -1296,7 +1306,11 @@ def responder_juego():
     return jsonify({'mensaje': 'Respuesta registrada correctamente'}), 200
 
 @app.route("/juegos", methods=["GET"])
+@cross_origin()
 def obtener_todos_los_juegos():
+    datos_juegos_data: Dict = {}
+    juegos = load_json_data('datos_juegos.json')
+    datos_juegos_data = juegos
     search_term = request.args.get('nombre', '').lower()
     if not datos_juegos_data:
         return jsonify({'error': 'Datos de juegos no cargados en el servidor.'}), 500
