@@ -1,19 +1,17 @@
-// catalog_script.js - Adaptado para el endpoint /juegos sin búsqueda en el backend
+// games-list.js
 
-const gameListing = document.getElementById('gameListing');
+const gamesContainer = document.getElementById('gamesContainer');
 const gameSearchInput = document.getElementById('searchInput');
 const searchGamesButton = document.getElementById('searchButton');
+const loadMoreGamesButton = document.getElementById('loadMoreBtn');
 
-
-let allCatalogGames = []; // Almacenará todos los juegos del catálogo (después de la carga inicial)
-let filteredCatalogGames = []; // Almacenará los juegos filtrados por el término de búsqueda actual
+let allCatalogGames = []; // Almacenará todos los juegos del catálogo
+let filteredCatalogGames = []; // Almacenará los juegos filtrados
 let currentDisplayedGamesCount = 0;
 const gamesToLoadPerClick = 12; // Número de juegos a mostrar con cada "cargar más"
 const API_BASE_URL = 'http://localhost:5000'; // URL base de tu API Flask
 
 // --- Helper Functions ---
-
-// Función para formatear el precio
 function formatPrice(price) {
     if (price === 0.00 || price === undefined || price === null) {
         return 'Gratis';
@@ -21,159 +19,183 @@ function formatPrice(price) {
     return `$${price.toFixed(2)}`;
 }
 
-// --- Core Logic for Game Catalog ---
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    if (text.length > maxLength) {
+        return text.substring(0, maxLength) + '...';
+    }
+    return text;
+}
 
-/**
- * Fetches ALL game data from the Flask backend.
- * This function now only fetches all games, filtering will be done client-side.
- * @returns {Promise<Array<Object>>} - A promise that resolves to an array of game objects.
- */
+// --- Core Logic ---
 async function fetchAllGamesFromBackend() {
-    console.log(`Obteniendo todos los juegos desde: ${API_BASE_URL}/juegos`);
+    const endpointURL = `${API_BASE_URL}/api/juegos`; // CORREGIDO: Usar /api/juegos
+    console.log(`Obteniendo todos los juegos desde: ${endpointURL}`);
     try {
-        const response = await fetch(`${API_BASE_URL}/juegos`); // Usa tu endpoint /juegos
-        
+        const response = await fetch(endpointURL);
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Error HTTP al obtener todos los juegos: ${response.status} - ${errorText}`);
-            return [];
+            let errorMsg = `Error HTTP: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMsg = errorData.error || errorMsg;
+            } catch (e) { /* Sin cuerpo de error JSON */ }
+            throw new Error(errorMsg);
         }
-        
         const data = await response.json();
-        console.log("Datos de juegos recibidos:", data);
-        return data;
-
+        return Array.isArray(data) ? data : [];
     } catch (error) {
-        console.error("Error al obtener los juegos del catálogo:", error);
+        console.error("Error al obtener los juegos desde el backend:", error);
+        if (gamesContainer) {
+            gamesContainer.innerHTML = `<p class="text-danger text-center col-12">Error al cargar los juegos: ${error.message}. Intenta de nuevo.</p>`;
+        }
         return [];
     }
 }
 
-/**
- * Creates a new game card element for the catalog.
- * @param {Object} game - The game data object.
- * @returns {HTMLElement} - The created div element containing the game card.
- */
-function createNewGameCard(game) {
-    const colDiv = document.createElement('div');
-    colDiv.classList.add('col-xl-3', 'col-lg-4', 'col-md-6', 'col-sm-6'); // Columnas para diseño responsive
+function createGameCardElement(game) {
+    if (!game || !game.appid) {
+        console.warn("Juego inválido o sin appid:", game);
+        return null;
+    }
+    const gameCardCol = document.createElement('div');
+    gameCardCol.className = 'col-lg-3 col-md-4 col-sm-6 mb-4';
 
-    const gameCard = document.createElement('a'); // Toda la tarjeta es un enlace
-    gameCard.href = `product.html?appid=${game.appid}`; 
-    gameCard.classList.add('game-card-new');
+    const card = document.createElement('div');
+    card.className = 'card game-card h-100 shadow-sm'; // Usar estilos de games-stylesheet.css
+
+    const imgLink = document.createElement('a');
+    imgLink.href = `../Products/product.html?game_id=${game.appid}` // Enlace a la página de detalles
 
     const img = document.createElement('img');
-    img.classList.add('card-img-top');
-    img.src = game.img_url || 'https://via.placeholder.com/460x215?text=Imagen no disponible';
-    img.alt = game.name;
+    img.src = game.portada || 'https://via.placeholder.com/350x200.png?text=No+Imagen';
+    img.className = 'card-img-top';
+    img.alt = game.nombre || 'Imagen del juego'; // Usar game.nombre
+    img.onerror = () => { img.src = 'https://via.placeholder.com/350x200.png?text=Error+Img'; };
+    imgLink.appendChild(img);
 
     const cardBody = document.createElement('div');
-    cardBody.classList.add('card-body-new');
+    cardBody.className = 'card-body d-flex flex-column';
 
     const title = document.createElement('h5');
-    title.classList.add('card-title-new');
-    title.textContent = game.name;
+    title.className = 'card-title'; // Estilo de games-stylesheet.css
+    const titleLink = document.createElement('a');
+    titleLink.href = `../Products/product.html?game_id=${game.appid}`
+    titleLink.textContent = truncateText(game.nombre || 'Título no disponible', 40); // Usar game.nombre
+    titleLink.style.color = 'inherit';
+    titleLink.style.textDecoration = 'none';
+    titleLink.addEventListener('mouseenter', () => titleLink.style.textDecoration = 'underline');
+    titleLink.addEventListener('mouseleave', () => titleLink.style.textDecoration = 'none');
+    title.appendChild(titleLink);
 
     const description = document.createElement('p');
-    description.classList.add('card-text-new');
-    description.textContent = game.description || 'No hay descripción disponible.';
+    description.className = 'card-description'; // Estilo de games-stylesheet.css
+    description.textContent = truncateText(game.descripcion_corta || 'Descripción no disponible.', 80);
+
+    const cardInfo = document.createElement('div');
+    cardInfo.className = 'card-info mt-auto';
+
+    const price = document.createElement('span');
+    price.className = 'card-price'; // Estilo de games-stylesheet.css
+
+    const releaseDate = document.createElement('span');
+    releaseDate.className = 'card-release-date'; // Estilo de games-stylesheet.css
+    releaseDate.textContent = game.fecha_publicacion || 'Próximamente';
+
+    cardInfo.appendChild(price);
+    cardInfo.appendChild(releaseDate);
+
+    const detailsButton = document.createElement('a');
+    detailsButton.href = `../Products/product.html?game_id=${game.appid}`
+    detailsButton.className = 'btn btn-primary btn-sm btn-block mt-2 view-details-btn';
+    detailsButton.textContent = 'Ver Detalles';
+    detailsButton.setAttribute('role', 'button');
 
     cardBody.appendChild(title);
     cardBody.appendChild(description);
+    cardBody.appendChild(cardInfo);
+    cardBody.appendChild(detailsButton);
 
-    const cardFooter = document.createElement('div');
-    cardFooter.classList.add('card-footer-new');
+    card.appendChild(imgLink);
+    card.appendChild(cardBody);
+    gameCardCol.appendChild(card);
 
-    const price = document.createElement('span');
-    price.classList.add('game-price-new');
-    price.textContent = formatPrice(game.price);
-
-    const releaseDate = document.createElement('span');
-    releaseDate.classList.add('game-release-date-new');
-    releaseDate.textContent = `Lanzamiento: ${game.release_date || 'Desconocida'}`;
-
-    cardFooter.appendChild(price);
-    cardFooter.appendChild(releaseDate);
-
-    gameCard.appendChild(img);
-    gameCard.appendChild(cardBody);
-    gameCard.appendChild(cardFooter);
-
-    colDiv.appendChild(gameCard);
-    return colDiv;
+    return gameCardCol;
 }
 
-/**
- * Renders a subset of games to the DOM.
- * @param {Array<Object>} gamesToRender - An array of game objects to render.
- */
-function renderCatalogGames(gamesToRender) {
-    gamesToRender.forEach(game => {
-        const gameCardElement = createNewGameCard(game);
-        gameListing.appendChild(gameCardElement);
-    });
-}
-
-/**
- * Loads and displays more games based on the current `filteredCatalogGames` array.
- */
 function loadMoreCatalogGames() {
-    const nextGames = filteredCatalogGames.slice(currentDisplayedGamesCount, currentDisplayedGamesCount + gamesToLoadPerClick);
-    renderCatalogGames(nextGames);
-    currentDisplayedGamesCount += nextGames.length;
+    if (!gamesContainer) return;
 
-    // Ocultar o mostrar el botón "Cargar Más"
+    const gamesToShow = filteredCatalogGames.slice(currentDisplayedGamesCount, currentDisplayedGamesCount + gamesToLoadPerClick);
+    gamesToShow.forEach(game => {
+        const cardElement = createGameCardElement(game);
+        if (cardElement) {
+            gamesContainer.appendChild(cardElement);
+        }
+    });
+    currentDisplayedGamesCount += gamesToShow.length;
+
     if (currentDisplayedGamesCount >= filteredCatalogGames.length) {
-        loadMoreGamesButton.style.display = 'none';
+        if (loadMoreGamesButton) loadMoreGamesButton.style.display = 'none';
     } else {
-        loadMoreGamesButton.style.display = 'block';
+        if (loadMoreGamesButton) loadMoreGamesButton.style.display = 'block';
     }
 }
 
-/**
- * Filters the `allCatalogGames` based on the search term and updates `filteredCatalogGames`.
- */
 function filterGamesClientSide(searchTerm) {
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
     if (!searchTerm) {
-        filteredCatalogGames = [...allCatalogGames]; // Si no hay término, todos los juegos
+        filteredCatalogGames = [...allCatalogGames];
     } else {
-        const lowerCaseSearchTerm = searchTerm.toLowerCase();
-        filteredCatalogGames = allCatalogGames.filter(game => 
-            game.name && game.name.toLowerCase().includes(lowerCaseSearchTerm)
+        filteredCatalogGames = allCatalogGames.filter(game =>
+            game.nombre && game.nombre.toLowerCase().includes(lowerCaseSearchTerm) // CORREGIDO: Usar game.nombre
         );
     }
-    gameListing.innerHTML = ''; // Limpiar listado actual
-    currentDisplayedGamesCount = 0; // Resetear contador
-    loadMoreCatalogGames(); // Cargar los primeros juegos filtrados/todos
+
+    if (gamesContainer) gamesContainer.innerHTML = ''; // Limpiar listado actual
+    currentDisplayedGamesCount = 0;
+    loadMoreCatalogGames();
+
+    if (filteredCatalogGames.length === 0 && gamesContainer) {
+        gamesContainer.innerHTML = '<p class="text-warning text-center col-12">No se encontraron juegos que coincidan con tu búsqueda.</p>';
+        if (loadMoreGamesButton) loadMoreGamesButton.style.display = 'none';
+    }
 }
 
-/**
- * Handles the game search functionality.
- */
 function handleGameSearch() {
     const searchTerm = gameSearchInput.value.trim();
-    filterGamesClientSide(searchTerm); // Realiza el filtrado en el cliente
+    filterGamesClientSide(searchTerm);
 }
 
 // --- Event Listeners ---
+if (searchGamesButton) {
+    searchGamesButton.addEventListener('click', handleGameSearch);
+}
 
-searchGamesButton.addEventListener('click', handleGameSearch);
+if (gameSearchInput) {
+    gameSearchInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleGameSearch();
+        }
+    });
+}
 
-// Permite buscar al presionar Enter en el input
-gameSearchInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-        event.preventDefault(); // Prevenir el envío de formulario si está en un form
-        handleGameSearch();
-    }
-});
+if (loadMoreGamesButton) {
+    loadMoreGamesButton.addEventListener('click', loadMoreCatalogGames);
+}
 
-const loadMoreGamesButton = document.getElementById('loadMoreBtn');
-
-
-// Inicializar la página al cargar el DOM
+// Inicializar la página
 document.addEventListener('DOMContentLoaded', async () => {
-    // Cargar TODOS los juegos una vez desde el backend
+    if (!gamesContainer) {
+        console.error("El contenedor 'gamesContainer' no fue encontrado.");
+        return;
+    }
     allCatalogGames = await fetchAllGamesFromBackend();
-    filteredCatalogGames = [...allCatalogGames]; // Inicialmente, los filtrados son todos los juegos
-    loadMoreCatalogGames(); // Cargar los primeros juegos
+    if (allCatalogGames.length > 0) {
+        filteredCatalogGames = [...allCatalogGames];
+        loadMoreCatalogGames();
+    } else if (gamesContainer.innerHTML === '') { // Si fetch falló y no mostró mensaje de error
+        gamesContainer.innerHTML = '<p class="text-info text-center col-12">No hay juegos disponibles en este momento.</p>';
+        if (loadMoreGamesButton) loadMoreGamesButton.style.display = 'none';
+    }
 });

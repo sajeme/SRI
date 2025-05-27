@@ -1,75 +1,70 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="product-stylesheet.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+        <script src="product-js.js"></script>
+
+        <nav class="d-flex navbar navbar-expand-md darkNav navbar-dark">
+            <span class="d-md-none d-block" style="cursor:pointer" onclick="openNav()"><img width="30px" height="30px" src="https://icon-library.com/images/hamburger-menu-icon-png-white/hamburger-menu-icon-png-white-10.jpg"></span>
+
+            
+            <div class="mx-auto bg">
+            <a class="float-left" href="../Home/home.html"><img
+                class="logoBig" src="../../ImageData/LO.png"></a>
+            
+            <div class="collapse navbar-collapse" id="collapsibleNavbar">
+              <ul class="navbar-nav pt-1">
+                <li class="nav-item dropdown">
+                    <div style="background-color: #171a21;" class="dropdown-menu">
+                      <a class="menuItem" href="#">Inicio</a>
+                    </div>
+                  </li>
+              </ul>
+            </div>
+        </div>
+            </nav>
+    </head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Explorar Juegos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../main-stylesheet.css"> <link rel="stylesheet" href="games-stylesheet.css">
+    <link rel="stylesheet" href="../main-stylesheet.css">
+    <link rel="stylesheet" href="games-stylesheet.css">
 </head>
 <body>
-    <nav class="d-flex navbar navbar-expand-md darkNav navbar-dark">
-        <span class="d-md-none d-block" style="cursor:pointer" onclick="openNav()"><img width="30px" height="30px" src="https://icon-library.com/images/hamburger-menu-icon-png-white/hamburger-menu-icon-png-white-10.jpg"></span>
+    
+    <div class="container mt-4">
+        <h1 class="text-center mb-4" style="color: #c7d5e0;">Explora Nuestro Catálogo de Juegos</h1>
 
-        <div id="myNav" class="overlay">
-            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()"><img width="30px" height="30px" src="https://icon-library.com/images/hamburger-menu-icon-png-white/hamburger-menu-icon-png-white-10.jpg"></a>
-            <div class="overlay-content">
-                <a href="../Home/home.html" class="menuItem">Inicio</a>
-                <a href="../Games/games.html" class="menuItem">Tienda</a>
-                <a href="../About/about.html" class="menuItem">Acerca de</a>
-                <a href="../Support/support.html" class="menuItem">Soporte</a>
-            </div>
-        </div>
-
-        <div class="mx-auto bg">
-            <a class="float-left" href="../Home/home.html"><img class="logoSmall" src="../ImageData/steam-logo.png"></a> <ul class="navbar-nav float-right">
-                <li class="nav-item">
-                    <a class="nav-link menuItem" href="../Games/games.html">Tienda</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link menuItem" href="#">Comunidad</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link menuItem" href="#">Acerca de</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle menuItem" href="#" id="cuentaMenu" data-toggle="dropdown">Cuenta</a>
-                    <div class="dropdown-menu darkDropdown" id="cuentaOpciones">
-                        <a class="dropdown-item menuItem" href="../Login/login.html">Inicia Sesión</a>
-                        <a class="dropdown-item menuItem" href="../Register/register.html">Regístrate</a>
-                    </div>
-                </li>
-            </ul>
-        </div>
-    </nav>
-
-    <div class="container mt-5">
-        <h1 class="text-white text-center mb-4">Explora Nuestro Catálogo de Juegos</h1>
-
-        <div class="input-group mb-4">
+        <div class="input-group mb-4 shadow-sm">
             <input type="text" class="form-control dark-input" id="searchInput" placeholder="Buscar juegos por nombre..." aria-label="Buscar juegos">
             <div class="input-group-append">
-                <button class="btn btn-outline-secondary search-btn" type="button" id="searchButton">Buscar</button>
+                <button class="btn search-btn" type="button" id="searchButton">Buscar</button>
             </div>
         </div>
 
         <div id="gamesContainer" class="row">
-            </div>
+        </div>
 
         <div class="text-center mt-4">
-            <button class="btn btn-primary load-more-btn" id="loadMoreBtn">Cargar Más Juegos</button>
+            <button class="btn btn-primary load-more-btn" id="loadMoreBtn" style="display:none;">Cargar Más Juegos</button>
         </div>
     </div>
 
-    <div class="card-footer" style="background-color: #313234; width: 100%; height:100px; padding: 20px 30px;">
-        <span class="d-md-none d-block">
-            <a class="float-left" href="../Home/home.html"><img class="logoBig" src="../ImageData/steam-logo.png"></a> </span>
-        <span class="text-muted float-right">© 2025 Mi Tienda de Juegos. Todos los derechos reservados.</span>
-    </div>
+    <footer class="text-center text-muted py-3" style="background-color: #171a21;">
+        © 2025 Mi Tienda de Juegos. Todos los derechos reservados.
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.1/dist/jquery.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../main-js.js"></script> <script src="games-list.js"></script>
-</body>
+    <script src="games-list.js" defer></script>
+    </body>
 </html>

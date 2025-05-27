@@ -1433,6 +1433,78 @@ def get_aggregate_interactions(game_id):
         "rating_count": rating_count
     })
 
+def load_json_data(filepath: str) -> dict: # En Python moderno, es 'dict' no 'Dict' para type hints
+    """Carga un archivo JSON y devuelve su contenido."""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data
+    except FileNotFoundError:
+        app.logger.error(f"Error crítico en load_json_data: El archivo {filepath} no fue encontrado.")
+        raise # Re-lanza para que el endpoint maneje el HTTP 404
+    except json.JSONDecodeError:
+        app.logger.error(f"Error crítico en load_json_data: El archivo {filepath} contiene JSON inválido.")
+        raise # Re-lanza para que el endpoint maneje el HTTP 500
+    except Exception as e:
+        app.logger.error(f"Error inesperado en load_json_data cargando {filepath}: {e}")
+        raise
+
+
+# --- DEFINICIÓN GLOBAL DE LA RUTA AL ARCHIVO JSON ---
+# AJUSTA ESTA RUTA SI 'datos_juegos.json' NO ESTÁ EN LA MISMA CARPETA QUE app.py
+# Si 'datos_juegos.json' está en la misma carpeta que app.py:
+DATOS_JUEGOS_FILEPATH = 'datos_juegos.json'
+# Si 'datos_juegos.json' está en una carpeta 'data' dentro de la misma carpeta que app.py:
+# DATOS_JUEGOS_FILEPATH = 'data/datos_juegos.json'
+# Si 'datos_juegos.json' está un nivel arriba de donde está app.py:
+# DATOS_JUEGOS_FILEPATH = '../datos_juegos.json'
+
+# --- Tus Endpoints ---
+@app.route('/api/juegos', methods=['GET'])
+@cross_origin()
+def get_todos_los_juegos():
+    try:
+        # Ahora DATOS_JUEGOS_FILEPATH está definida globalmente
+        juegos_data_dict = load_json_data(DATOS_JUEGOS_FILEPATH)
+        if not isinstance(juegos_data_dict, dict):
+            app.logger.error("El formato de datos_juegos.json no es un objeto/diccionario.")
+            return jsonify({"error": "Formato de datos incorrecto en el servidor."}), 500
+        
+        juegos_lista = list(juegos_data_dict.values())
+        return jsonify(juegos_lista)
+    except FileNotFoundError:
+        # El logger en load_json_data ya registró esto, aquí respondemos al cliente.
+        # No es necesario volver a loggear DATOS_JUEGOS_FILEPATH aquí si ya lo hizo load_json_data.
+        return jsonify({"error": "Fuente de datos de juegos no disponible (archivo no encontrado)."}), 404
+    except json.JSONDecodeError:
+        return jsonify({"error": "Error al leer los datos de los juegos (formato JSON inválido)."}), 500
+    except Exception as e:
+        app.logger.error(f"Error inesperado en get_todos_los_juegos: {str(e)}") # El error original ya fue loggeado
+        return jsonify({"error": "Ocurrió un error interno inesperado al procesar los juegos."}), 500
+
+@app.route('/api/juegos/<string:appid>', methods=['GET'])
+@cross_origin()
+def get_juego_por_id(appid):
+    try:
+        juegos_data_dict = load_json_data(DATOS_JUEGOS_FILEPATH)
+        if not isinstance(juegos_data_dict, dict):
+            app.logger.error("El formato de datos_juegos.json no es un objeto/diccionario.")
+            return jsonify({"error": "Formato de datos incorrecto en el servidor."}), 500
+
+        juego = juegos_data_dict.get(appid)
+        
+        if juego:
+            return jsonify(juego)
+        else:
+            return jsonify({"error": f"Juego con appid {appid} no encontrado."}), 404
+    except FileNotFoundError:
+        return jsonify({"error": "Fuente de datos de juegos no disponible (archivo no encontrado)."}), 404
+    except json.JSONDecodeError:
+        return jsonify({"error": "Error al leer los datos del juego (formato JSON inválido)."}), 500
+    except Exception as e:
+        app.logger.error(f"Error inesperado en get_juego_por_id ({appid}): {str(e)}")
+        return jsonify({"error": "Ocurrió un error interno inesperado al procesar el juego."}), 500
+
 # Punto de trada principal para ejecutar la aplicación Flask
 if __name__ == '__main__':
     # No se llama a initialize_models_and_data() aquí.
