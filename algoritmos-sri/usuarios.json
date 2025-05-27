@@ -4,241 +4,402 @@
       "id": 1,
       "nombre": "Juan Pérez",
       "edad": 16,
-      "generos_favoritos": ["acción", "shooter", "cooperativo"]
+      "generos_favoritos": [
+        "acción",
+        "shooter",
+        "cooperativo"
+      ]
     },
     {
       "id": 2,
       "nombre": "Ana Gómez",
       "edad": 30,
-      "generos_favoritos": ["aventura", "historia", "exploración"]
+      "generos_favoritos": [
+        "aventura",
+        "historia",
+        "exploración"
+      ]
     },
     {
       "id": 3,
       "nombre": "Carlos Rodríguez",
       "edad": 22,
-      "generos_favoritos": ["multijugador", "supervivencia", "sandbox"]
+      "generos_favoritos": [
+        "multijugador",
+        "supervivencia",
+        "sandbox"
+      ]
     },
     {
       "id": 4,
       "nombre": "Sofía Martínez",
       "edad": 28,
-      "generos_favoritos": ["rol", "fantasía", "estratégia"]
+      "generos_favoritos": [
+        "rol",
+        "fantasía",
+        "estratégia"
+      ]
     },
     {
       "id": 5,
       "nombre": "Pedro López",
       "edad": 35,
-      "generos_favoritos": ["mundo abierto", "conducción", "acción"]
+      "generos_favoritos": [
+        "mundo abierto",
+        "conducción",
+        "acción"
+      ]
     },
     {
       "id": 6,
       "nombre": "Laura García",
       "edad": 23,
-      "generos_favoritos": ["casual", "simulación", "indie"]
+      "generos_favoritos": [
+        "casual",
+        "simulación",
+        "indie"
+      ]
     },
     {
       "id": 7,
       "nombre": "Diego Sánchez",
       "edad": 29,
-      "generos_favoritos": ["shooter táctico", "horror", "acción"]
+      "generos_favoritos": [
+        "shooter táctico",
+        "horror",
+        "acción"
+      ]
     },
     {
       "id": 8,
       "nombre": "Valeria Castro",
       "edad": 26,
-      "generos_favoritos": ["acción", "aventura", "sigilo", "narrativo"]
+      "generos_favoritos": [
+        "acción",
+        "aventura",
+        "sigilo",
+        "narrativo"
+      ]
     },
     {
       "id": 9,
       "nombre": "Ricardo Morales",
       "edad": 33,
-      "generos_favoritos": ["caza de monstruos", "rol", "acción"]
+      "generos_favoritos": [
+        "caza de monstruos",
+        "rol",
+        "acción"
+      ]
     },
     {
       "id": 10,
       "nombre": "Gabriela Herrera",
       "edad": 24,
-      "generos_favoritos": ["lucha", "acción", "competitivo"]
+      "generos_favoritos": [
+        "lucha",
+        "acción",
+        "competitivo"
+      ]
     },
     {
       "id": 11,
       "nombre": "Andrés Soto",
       "edad": 27,
-      "generos_favoritos": ["simulación", "construcción", "gestión"]
+      "generos_favoritos": [
+        "simulación",
+        "construcción",
+        "gestión"
+      ]
     },
     {
       "id": 12,
       "nombre": "Daniela Vargas",
       "edad": 31,
-      "generos_favoritos": ["ciencia ficción", "rol", "acción"]
+      "generos_favoritos": [
+        "ciencia ficción",
+        "rol",
+        "acción"
+      ]
     },
     {
       "id": 13,
       "nombre": "Javier Mendoza",
       "edad": 20,
-      "generos_favoritos": ["battle royale", "shooter", "competitivo"]
+      "generos_favoritos": [
+        "battle royale",
+        "shooter",
+        "competitivo"
+      ]
     },
     {
       "id": 14,
       "nombre": "Mariana Flores",
       "edad": 29,
-      "generos_favoritos": ["misterio", "deducción social", "casual"]
+      "generos_favoritos": [
+        "misterio",
+        "deducción social",
+        "casual"
+      ]
     },
     {
       "id": 15,
       "nombre": "Luis Torres",
       "edad": 34,
-      "generos_favoritos": ["fantasia", "magia", "rol"]
+      "generos_favoritos": [
+        "fantasia",
+        "magia",
+        "rol"
+      ]
     },
     {
       "id": 16,
       "nombre": "Carmen Rivera",
       "edad": 26,
-      "generos_favoritos": ["acción", "aventura", "mundo abierto"]
+      "generos_favoritos": [
+        "acción",
+        "aventura",
+        "mundo abierto"
+      ]
     },
     {
       "id": 17,
       "nombre": "Jorge Guzmán",
       "edad": 32,
-      "generos_favoritos": ["shooter", "cooperativo", "ciencia ficción"]
+      "generos_favoritos": [
+        "shooter",
+        "cooperativo",
+        "ciencia ficción"
+      ]
     },
     {
       "id": 18,
       "nombre": "Fernanda Díaz",
       "edad": 21,
-      "generos_favoritos": ["supervivencia", "construcción", "indie"]
+      "generos_favoritos": [
+        "supervivencia",
+        "construcción",
+        "indie"
+      ]
     },
     {
       "id": 19,
       "nombre": "Roberto Vargas",
       "edad": 30,
-      "generos_favoritos": ["rol", "táctico", "fantasía"]
+      "generos_favoritos": [
+        "rol",
+        "táctico",
+        "fantasía"
+      ]
     },
     {
       "id": 20,
       "nombre": "Natalia Salazar",
       "edad": 24,
-      "generos_favoritos": ["acción", "aventura", "sigilo"]
+      "generos_favoritos": [
+        "acción",
+        "aventura",
+        "sigilo"
+      ]
     },
     {
       "id": 21,
       "nombre": "Pablo Mendoza",
       "edad": 28,
-      "generos_favoritos": ["estrategia", "simulación", "construcción"]
+      "generos_favoritos": [
+        "estrategia",
+        "simulación",
+        "construcción"
+      ]
     },
     {
       "id": 22,
       "nombre": "Camila Soto",
       "edad": 23,
-      "generos_favoritos": ["casual", "rompecabezas", "indie"]
+      "generos_favoritos": [
+        "casual",
+        "rompecabezas",
+        "indie"
+      ]
     },
     {
       "id": 23,
       "nombre": "Manuel Castro",
       "edad": 35,
-      "generos_favoritos": ["mundo abierto", "western", "acción"]
+      "generos_favoritos": [
+        "mundo abierto",
+        "western",
+        "acción"
+      ]
     },
     {
       "id": 24,
       "nombre": "Andrea López",
       "edad": 27,
-      "generos_favoritos": ["ciencia ficción", "rol", "exploración"]
+      "generos_favoritos": [
+        "ciencia ficción",
+        "rol",
+        "exploración"
+      ]
     },
     {
       "id": 25,
       "nombre": "Felipe García",
       "edad": 22,
-      "generos_favoritos": ["shooter", "competitivo", "acción"]
+      "generos_favoritos": [
+        "shooter",
+        "competitivo",
+        "acción"
+      ]
     },
     {
       "id": 26,
       "nombre": "Isabel Pérez",
       "edad": 30,
-      "generos_favoritos": ["fantasía", "magia", "aventura"]
+      "generos_favoritos": [
+        "fantasía",
+        "magia",
+        "aventura"
+      ]
     },
     {
       "id": 27,
       "nombre": "Gonzalo Rodríguez",
       "edad": 25,
-      "generos_favoritos": ["multijugador", "supervivencia", "acción"]
+      "generos_favoritos": [
+        "multijugador",
+        "supervivencia",
+        "acción"
+      ]
     },
     {
       "id": 28,
       "nombre": "Elena Sánchez",
       "edad": 33,
-      "generos_favoritos": ["rol", "historia", "táctico"]
+      "generos_favoritos": [
+        "rol",
+        "historia",
+        "táctico"
+      ]
     },
     {
       "id": 29,
       "nombre": "Miguel Torres",
       "edad": 29,
-      "generos_favoritos": ["caza de monstruos", "acción", "cooperativo"]
+      "generos_favoritos": [
+        "caza de monstruos",
+        "acción",
+        "cooperativo"
+      ]
     },
     {
       "id": 30,
       "nombre": "Carolina Díaz",
       "edad": 26,
-      "generos_favoritos": ["lucha", "competitivo", "acción"]
+      "generos_favoritos": [
+        "lucha",
+        "competitivo",
+        "acción"
+      ]
     },
     {
       "id": 31,
       "nombre": "Sergio Ruiz",
       "edad": 24,
-      "generos_favoritos": ["simulación", "gestión", "indie"]
+      "generos_favoritos": [
+        "simulación",
+        "gestión",
+        "indie"
+      ]
     },
     {
       "id": 32,
       "nombre": "Adriana Herrera",
       "edad": 31,
-      "generos_favoritos": ["supervivencia", "terror", "acción"]
+      "generos_favoritos": [
+        "supervivencia",
+        "terror",
+        "acción"
+      ]
     },
     {
       "id": 33,
       "nombre": "Mario Castillo",
       "edad": 20,
-      "generos_favoritos": ["casual", "deducción social", "multijugador"]
+      "generos_favoritos": [
+        "casual",
+        "deducción social",
+        "multijugador"
+      ]
     },
     {
       "id": 34,
       "nombre": "Jessica Morales",
       "edad": 28,
-      "generos_favoritos": ["mundo abierto", "fantasía", "rol"]
+      "generos_favoritos": [
+        "mundo abierto",
+        "fantasía",
+        "rol"
+      ]
     },
     {
       "id": 35,
       "nombre": "Fernando Reyes",
       "edad": 34,
-      "generos_favoritos": ["acción", "sigilo", "aventura"]
+      "generos_favoritos": [
+        "acción",
+        "sigilo",
+        "aventura"
+      ]
     },
     {
       "id": 36,
       "nombre": "Brenda Núñez",
       "edad": 23,
-      "generos_favoritos": ["shooter", "cooperativo", "táctico"]
+      "generos_favoritos": [
+        "shooter",
+        "cooperativo",
+        "táctico"
+      ]
     },
     {
       "id": 37,
       "nombre": "Oscar Rojas",
       "edad": 29,
-      "generos_favoritos": ["estrategia", "rol", "fantasía"]
+      "generos_favoritos": [
+        "estrategia",
+        "rol",
+        "fantasía"
+      ]
     },
     {
       "id": 38,
       "nombre": "Liliana Guzmán",
       "edad": 25,
-      "generos_favoritos": ["mundo abierto", "conducción", "acción"]
+      "generos_favoritos": [
+        "mundo abierto",
+        "conducción",
+        "acción"
+      ]
     },
     {
       "id": 39,
       "nombre": "Héctor Soto",
       "edad": 32,
-      "generos_favoritos": ["simulación", "supervivencia", "construcción"]
+      "generos_favoritos": [
+        "simulación",
+        "supervivencia",
+        "construcción"
+      ]
     },
     {
       "id": 40,
       "nombre": "Paola Vargas",
       "edad": 27,
-      "generos_favoritos": ["acción", "combate", "ciencia ficción"]
+      "generos_favoritos": [
+        "acción",
+        "combate",
+        "ciencia ficción"
+      ]
     },
     {
       "id": 41,

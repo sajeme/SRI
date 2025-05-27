@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="product-stylesheet.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+        <script src="product-js.js"></script>
+
+        <nav class="d-flex navbar navbar-expand-md darkNav navbar-dark">
+            <span class="d-md-none d-block" style="cursor:pointer" onclick="openNav()"><img width="30px" height="30px" src="https://icon-library.com/images/hamburger-menu-icon-png-white/hamburger-menu-icon-png-white-10.jpg"></span>
+
+            
+            <div class="mx-auto bg">
+            <a class="float-left" href="../Home/home.html"><img
+                class="logoBig" src="../../ImageData/LO.png"></a>
+            
+            <div class="collapse navbar-collapse" id="collapsibleNavbar">
+              <ul class="navbar-nav pt-1">
+                <li class="nav-item dropdown">
+                    <a class="nav-link" href="#" data-toggle="dropdown">
+                      Tienda
+                    </a>
+                    <div style="background-color: #171a21;" class="dropdown-menu">
+                      <a class="menuItem" href="#">Inicio</a>
+                    </div>
+                  </li>
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" id="cuentaMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Cuenta
+                  </a>
+                  <div class="dropdown-menu" id="cuentaOpciones" aria-labelledby="cuentaMenu" style="background-color: #171a21;">
+                    
+                  </div>
+                </li>
+                
+                <li class="nav-item">
+                  <a class="nav-link" href="../About/about.html">Sobre Nosotros</a>
+                </li>
+              </ul>
+            </div>
+        </div>
+            </nav>
+    </head>
+    
+    <body id="body" style="background-color: #1b2838;">
+        <div class="bg">
+            <div id="game-highlight-div" class="container" style=" width: 60%; height: 470px; position: relative; background-color: #0e151d; padding: 0px;">
+                <div style="float: left; width: 60%; height: 100%;"
+           id="gameCarousel" class="carousel slide carousel-fade vid-carousel" data-ride="carousel" data-interval="false">
+           <ul class="carousel-indicators" id="carouselIndicators">
+            </ul>
+           
+           <div class="carousel-inner" id="carouselInner">
+            </div>
+
+           <a class="carousel-control-prev" href="#gameCarousel" data-slide="prev">
+             <span class="carousel-control-prev-icon"></span>
+           </a>
+           <a class="carousel-control-next" href="#gameCarousel" data-slide="next">
+             <span class="carousel-control-next-icon"></span>
+           </a>
+        </div>
+
+                <div style="float: left; width: 40%; height: 100%; background-color: #0d151d;" class="mx-auto text-light">
+                    <h5 id="gameName" style="color: #66c0f4; padding: 20px 20px 0px 20px; text-align: left;">Nombre del Juego</h5>
+                    <p id="shortDescription" class="smallFont" style="padding: 0px 20px;"></p>
+                    <div style="position: absolute; bottom: 0; width: 100%;">
+                        <div class="smallFont" style="display: inline-block; padding: 0px 20px;">
+                            <span class="dimFont">Fecha de lanzamiento: </span><span id="releaseDate"></span><br>
+                            <span class="dimFont">Desarrollador: </span><span id="developer"></span><br>
+                            <span class="dimFont">Editor: </span><span id="publisher"></span><br>
+                            <span class="dimFont">Edad Mínima: </span><span id="minimumAge"></span><br>
+
+                        </div>
+                        <div style="padding: 0px 20px 20px 20px;">
+                            <h5 id="gamePrice" style="color: #66c0f4; text-align: left;">Precio</h5>
+                            <a href="#" id="buyButtonLink">
+                                <button type="button" class="btn btn-success" id="buyGameBtn"><span>Comprar Juego</span></button>
+                            </a>
+                            <div id="likeDislikeSection" style="margin-top: 10px; display: none;">
+                                <button type="button" class="btn btn-outline-success mr-2" id="likeBtn">Me gusta</button>
+                                <button type="button" class="btn btn-outline-danger" id="dislikeBtn">No me gusta</button>
+                            </div>
+
+                            <div id="ratingSection" style="display: none; margin-top: 10px;">
+                                <div class="stars">
+                                    <span class="star" data-value="1">&#9733;</span>
+                                    <span class="star" data-value="2">&#9733;</span>
+                                    <span class="star" data-value="3">&#9733;</span>
+                                    <span class="star" data-value="4">&#9733;</span>
+                                    <span class="star" data-value="5">&#9733;</span>
+                                </div>
+                                <button type="button" class="btn btn-primary mt-2" id="submitRatingBtn">Enviar Calificación</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br>
+
+            <div class="container" style=" width: 60%; background-color: #0e151d; padding: 20px;">
+                <h5 style="color: #66c0f4; text-align: left;">Acerca de este juego</h5>
+                <div id="longDescription" class="smallFont text-light">
+                    </div>
+                <hr style="background-color: #3a6e8b;">
+
+                <h5 style="color: #66c0f4; text-align: left;">Etiquetas populares</h5>
+                <div id="gameTags" class="tag-container">
+                    </div>
+                <hr style="background-color: #3a6e8b;">
+
+                <h5 style="color: #66c0f4; text-align: left;">Categorías</h5>
+                <div id="gameCategories" class="tag-container">
+                    </div>
+                <hr style="background-color: #3a6e8b;">
+
+                <div id="sysreq" style="display: inline-block; border-bottom: 1px; border-color: #3a6e8b; border-style: solid; border-top: 0px;
+                border-left: 0px; border-right: 0px; margin-left: 0%;">
+                  <span class="smallFont text-light">
+                    Requisitos del Sistema
+                  </span>
+                  <br>
+                  <div id="req-type" class="smallFont text-light">
+                    <div id="minimumRequirements">
+                        </div>
+                    <div id="recommendedRequirements">
+                        </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <div class="card-footer" style="background-color: #313234; width: 100%; height:100px; padding: 20px 30px;">
+        <span class="d-block text-light" style="text-align: center;">@ 2025 by The Big Three™. All rights reserved. All trademarks are property of their respective owners.</span>
+    </div>
+</html>

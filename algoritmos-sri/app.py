@@ -3,6 +3,7 @@ import dateparser
 import json
 import pandas as pd
 import numpy as np
+from flask_cors import CORS
 import random
 from collections import defaultdict
 from typing import List, Dict, Any, Tuple
@@ -25,6 +26,7 @@ except locale.Error:
         print("Advertencia: No se pudo establecer la localización 'es_ES'. Las fechas pueden no parsearse correctamente sin dateparser.")
 
 app = Flask(__name__)
+CORS(app)
 
 # --- Funciones Auxiliares Comunes ---
 def load_json_data(filepath: str) -> Dict:
@@ -1104,7 +1106,219 @@ def recommend_action_2025_games():
 def home():
     return "API de Recomendación de Videojuegos Activa!"
 
-# Punto de entrada principal para ejecutar la aplicación Flask
+@app.route('/usuarios', methods=['POST'])
+def crear_usuario():
+    try:
+        data = request.json
+        nombre = data.get('nombre')
+        edad = data.get('edad')
+        generos = data.get('generos_favoritos')
+
+        if not nombre or not isinstance(edad, int) or not isinstance(generos, list):
+            return jsonify({'error': 'Datos inválidos'}), 400
+
+        with open('usuarios.json', 'r', encoding='utf-8') as f:
+            usuarios_data = json.load(f)
+
+        # ✅ Validar si ya existe el nombre (sin distinguir mayúsculas)
+        for u in usuarios_data['usuarios']:
+            if u['nombre'].strip().lower() == nombre.strip().lower():
+                return jsonify({'error': 'El nombre ya está en uso. Elige otro.'}), 409
+
+        nuevos_usuarios = usuarios_data['usuarios']
+        nuevo_id = max(u['id'] for u in nuevos_usuarios) + 1 if nuevos_usuarios else 1
+
+        nuevo_usuario = {
+            'id': nuevo_id,
+            'nombre': nombre,
+            'edad': edad,
+            'generos_favoritos': [g.lower() for g in generos]
+        }
+
+        nuevos_usuarios.append(nuevo_usuario)
+
+        with open('usuarios.json', 'w', encoding='utf-8') as f:
+            json.dump({'usuarios': nuevos_usuarios}, f, indent=2, ensure_ascii=False)
+
+        return jsonify({'mensaje': 'Usuario creado', 'usuario': nuevo_usuario}), 201
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/login', methods=['POST'])
+def login_usuario():
+    try:
+        data = request.json
+        nombre = data.get('nombre')
+
+        if not nombre:
+            return jsonify({'error': 'Falta el nombre'}), 400
+
+        with open('usuarios.json', 'r', encoding='utf-8') as f:
+            usuarios_data = json.load(f)
+
+        usuario = next(
+            (u for u in usuarios_data['usuarios'] if u['nombre'].strip().lower() == nombre.strip().lower()),
+            None
+        )
+
+        if usuario:
+            return jsonify({'mensaje': 'Login exitoso', 'usuario': usuario}), 200
+        else:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/games/<int:game_id>', methods=['GET'])
+def get_game_by_id(game_id):
+    """
+    Endpoint para obtener los datos completos de un juego por su ID.
+    """
+    game_info = datos_juegos_data.get(str(game_id))
+
+    if not game_info:
+        return jsonify({"error": f"Juego con ID {game_id} no encontrado."}), 404
+
+    # Asegura incluir el ID como campo explícito
+    game_info_with_id = game_info.copy()
+    game_info_with_id['id'] = game_id
+
+    return jsonify(game_info_with_id), 200
+
+# Ruta al archivo interacciones.json
+INTERACCIONES_FILE = 'interacciones.json'
+
+@app.route('/responder_juego', methods=['POST'])
+def responder_juego():
+    data = request.get_json()
+    id_usuario  = data.get('id_usuario')
+    id_juego    = data.get('id_juego')
+    calificacion = data.get('calificacion')
+    like        = data.get('like')
+
+    # 1) Cargo localmente el JSON “crudo”
+    try:
+        with open(INTERACCIONES_FILE, 'r', encoding='utf-8') as f:
+            full_data = json.load(f)
+    except (IOError, json.JSONDecodeError):
+        full_data = {'interacciones': []}
+
+    # 2) Extraigo la lista en una variable distinta
+    interactions_list = full_data.get('interacciones', [])
+
+    # Validaciones iniciales
+    if id_usuario is None or id_juego is None:
+        return jsonify({'error': 'Faltan id_usuario o id_juego.'}), 400
+
+    # Procesar calificación si existe
+    if calificacion is not None:
+        try:
+            calificacion = float(calificacion)
+            # Asegurarse de que la calificación esté dentro del rango esperado (ej. 1 a 5)
+            if not (1 <= calificacion <= 5):
+                return jsonify({'error': 'La calificación debe ser un número entre 1 y 5.'}), 400
+        except ValueError:
+            return jsonify({'error': 'La calificación debe ser un número válido.'}), 400
+    
+    # Procesar like/dislike si existe
+    if like is not None and not isinstance(like, bool):
+        return jsonify({'error': 'El campo "like" debe ser booleano.'}), 400
+
+    # Crear el objeto de interacción base con los datos disponibles
+    nueva_interaccion = {'id_juego': id_juego}
+
+    # Solo añadir campos si tienen un valor válido y no son nulos
+    if calificacion is not None:
+        nueva_interaccion['calificacion'] = calificacion
+    if like is not None:
+        nueva_interaccion['like'] = like
+    
+    # horas_jugadas solo se agrega si no hay calificación ni like. 
+    # Si hay calificación, el modelo de Surprise la usa.
+    # Si hay like, es una interacción binaria.
+    # Si no hay ninguna de las dos, ¿qué tipo de interacción es? 
+    # Asumo que 'horas_jugadas' solo se usaría si no hay otra métrica.
+    # Pero el requisito es "si le di like, solo va a guardar el campo like, no me pongas calificacion 0.0 ni horas"
+    # Y "Calificacion se agrega solo cuando califique, no hay mas igual con el like."
+    # Esto implica que no deberían coexistir si se quieren mutuamente excluyentes para el modelo.
+    # Sin embargo, el front-end puede enviar ambos. La lógica actual del front-end en product-js.js
+    # envía calificacion: 0 cuando se da like/dislike sin calificar, lo cual está causando el problema.
+    # La solución es que el front-end no envíe 0, sino `null` o no enviar el campo `calificacion`.
+    # Y que el backend priorice o maneje esta exclusividad.
+
+    # Lógica para manejar si la interacción ya existe
+    usuario_encontrado = False
+    for usuario in interactions_list:
+        if usuario.get('id') == id_usuario:
+            usuario_encontrado = True
+            juego_encontrado = False
+            for inter in usuario.setdefault('interacciones', []):
+                if inter.get('id_juego') == id_juego:
+                    # Si ya existe, actualiza solo los campos que se enviaron
+                    if 'calificacion' in nueva_interaccion:
+                        inter['calificacion'] = nueva_interaccion['calificacion']
+                    elif 'calificacion' in inter: # Si no se envió calificacion, elimínala si existe
+                        del inter['calificacion']
+
+                    if 'like' in nueva_interaccion:
+                        inter['like'] = nueva_interaccion['like']
+                    elif 'like' in inter: # Si no se envió like, elimínala si existe
+                        del inter['like']
+                    
+                    # Asegúrate de que no haya horas_jugadas si hay calificacion o like.
+                    # El requisito dice "no me pongas horas".
+                    if 'horas_jugadas' in inter:
+                         del inter['horas_jugadas'] # Eliminar horas_jugadas al actualizar.
+                    
+                    juego_encontrado = True
+                    break
+            
+            if not juego_encontrado:
+                # Si no la encontré, la agrego con los campos relevantes
+                usuario['interacciones'].append(nueva_interaccion)
+            break
+
+    if not usuario_encontrado:
+        # Si el usuario no existía, crearlo con la nueva interacción
+        interactions_list.append({
+            'id': id_usuario,
+            'interacciones': [nueva_interaccion]
+        })
+
+    # 4) Guardo de nuevo SOLO esa lista en el archivo
+    try:
+        with open(INTERACCIONES_FILE, 'w', encoding='utf-8') as f:
+            json.dump({'interacciones': interactions_list}, f, ensure_ascii=False, indent=2)
+    except IOError as e:
+        return jsonify({'error': f'No se pudo guardar datos: {e}'}), 500
+
+    return jsonify({'mensaje': 'Respuesta registrada correctamente'}), 200
+
+@app.route("/juegos", methods=["GET"])
+def obtener_todos_los_juegos():
+    search_term = request.args.get('nombre', '').lower()
+    if not datos_juegos_data:
+        return jsonify({'error': 'Datos de juegos no cargados en el servidor.'}), 500
+
+    juegos_filtrados = []
+
+    for juego in datos_juegos_data.values():
+        nombre = juego.get('nombre', '').lower()
+        if search_term in nombre:
+            juegos_filtrados.append({
+                'appid': juego.get('appid', 0),
+                'name': juego.get('nombre', 'Nombre Desconocido'),
+                'description': juego.get('descripcion_corta', 'Descripción no disponible.'),
+                'img_url': juego.get('portada', f"https://via.placeholder.com/460x215?text=No+Image"),
+                'price': parse_precio(juego.get('precio')),
+                'release_date': juego.get('fecha_publicacion', 'Fecha Desconocida')
+            })
+
+    return jsonify(juegos_filtrados)
+
+
+# Punto de trada principal para ejecutar la aplicación Flask
 if __name__ == '__main__':
     # No se llama a initialize_models_and_data() aquí.
     # Cada endpoint cargará y entrenará lo que necesite.

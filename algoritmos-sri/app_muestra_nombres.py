@@ -116,123 +116,128 @@ with app.app_context():
 
         def load_game_data_from_json(self, games_data_loaded: Dict):
             for appid, game_info in games_data_loaded.items():
-                game_id_str = str(appid)
-                nombre = game_info.get("nombre", "Desconocido")
-                categorias = game_info.get("categorias", [])
-                tags = [tag.get("description") for tag in game_info.get("tags", []) if tag.get("description")]
-                
-                edad_minima_str = game_info.get("edad_minima", "0")
+                gid = str(appid)
+                nombre    = game_info.get("nombre", "Desconocido")
+                categorias= game_info.get("categorias", [])
+                tags      = [t.get("description") for t in game_info.get("tags", []) if t.get("description")]
+                # edad mínima
                 try:
-                    edad_minima = int(edad_minima_str)
+                    edad_min = int(game_info.get("edad_minima", "0"))
                 except ValueError:
-                    edad_minima = 0
-                self.game_features[game_id_str] = {
-                    'nombre': nombre,
-                    'categorias': categorias,
-                    'tags': tags,
-                    'edad_minima': edad_minima
+                    edad_min = 0
+
+                self.game_features[gid] = {
+                    'nombre':      nombre,
+                    'categorias':  categorias,
+                    'tags':        tags,
+                    'edad_minima': edad_min
                 }
             print(f"Cold Start: Cargados {len(self.game_features)} juegos.")
-        
+
         def load_user_data_from_json(self, users_data_loaded: Dict):
-            for user_profile in users_data_loaded.get("usuarios", []):
-                user_id = user_profile.get("id")
-                if user_id is not None:
-                    self.user_profiles[user_id] = {
-                        'nombre': user_profile.get("nombre", "Desconocido"),
-                        'edad': user_profile.get("edad", 0),
-                        'generos_favoritos': user_profile.get("generos_favoritos", [])
+            for u in users_data_loaded.get("usuarios", []):
+                uid = u.get("id")
+                if uid is not None:
+                    self.user_profiles[uid] = {
+                        'nombre':           u.get("nombre", "Desconocido"),
+                        'edad':             u.get("edad", 0),
+                        'generos_favoritos': u.get("generos_favoritos", [])
                     }
             print(f"Cold Start: Cargados {len(self.user_profiles)} usuarios.")
 
         def calculate_category_weights_from_interactions(self, interactions_data_loaded: Dict):
-            category_ratings_sum = defaultdict(float)
-            category_ratings_count = defaultdict(int)
+            sum_ratings = defaultdict(float)
+            count_ratings = defaultdict(int)
 
-            for user_interaction_entry in interactions_data_loaded.get("interacciones", []):
-                for game_played in user_interaction_entry.get("interacciones", []):
-                    game_appid = str(game_played["id_juego"])
-                    
-                    if game_appid in self.game_features:
-                        game_info = self.game_features[game_appid]
-                        
-                        rating = 0.0
-                        if "calificacion" in game_played and game_played["calificacion"] is not None:
+            for entry in interactions_data_loaded.get("interacciones", []):
+                for played in entry.get("interacciones", []):
+                    gid = str(played.get("id_juego"))
+                    if gid in self.game_features:
+                        # determinar rating
+                        if played.get("calificacion") is not None:
                             try:
-                                rating = float(game_played["calificacion"])
+                                rating = float(played["calificacion"])
                             except ValueError:
                                 rating = 0.0
-                        elif game_played.get("like"):
+                        elif played.get("like"):
                             rating = 5.0
-                        elif not game_played.get("like") and game_played.get("calificacion") is None:
+                        else:
                             rating = 1.0
-                        
-                        all_game_content_attributes = game_info.get('categorias', []) + game_info.get('tags', [])
-                        for attribute in all_game_content_attributes:
-                            normalized_attribute = attribute.lower()
-                            category_ratings_sum[normalized_attribute] += rating
-                            category_ratings_count[normalized_attribute] += 1
-            
-            for category, total_rating in category_ratings_sum.items():
-                count = category_ratings_count[category]
-                if count > 0:
-                    self.category_weights[category] = (total_rating / count) / 5.0
-                else:
-                    self.category_weights[category] = 0.5
 
-            print(f"Cold Start: Pesos de categorías actualizados.")
+                        attrs = self.game_features[gid]['categorias'] + self.game_features[gid]['tags']
+                        for a in attrs:
+                            key = a.lower()
+                            sum_ratings[key]   += rating
+                            count_ratings[key] += 1
+
+            # calcular peso medio /5
+            for cat, total in sum_ratings.items():
+                cnt = count_ratings[cat]
+                self.category_weights[cat] = (total / cnt) / 5.0 if cnt > 0 else 0.5
+
+            print("Cold Start: Pesos de categorías actualizados.")
 
         def recommend_for_user(self, user_id: int, min_n: int = 5, max_n: int = 10) -> List[Dict[str, Any]]:
+            # chequeo de existencia
             if user_id not in self.user_profiles:
-                raise ValueError(f"Usuario con ID {user_id} no registrado en los perfiles de cold start.")
-                
+                raise ValueError(f"Usuario {user_id} no registrado.")
+
             user = self.user_profiles[user_id]
-            user_age = user['edad']
-            user_fav_genres = [g.lower() for g in user['generos_favoritos']]
+            edad_usuario = user['edad']
+            fav_genres = {g.lower() for g in user['generos_favoritos']}
+
+            # juegos ya vistos
+            seen = set()
+            for entry in interacciones_data.get("interacciones", []):
+                if entry.get("id") == user_id:
+                    for played in entry.get("interacciones", []):
+                        seen.add(str(played.get("id_juego")))
+                    break
 
             scores: List[Tuple[str, float]] = []
-            
-            for game_id, game in self.game_features.items():
-                if user_age < game['edad_minima']:
+            for gid, info in self.game_features.items():
+                # filtros
+                if gid in seen: 
                     continue
-                
-                game_score = 0.0
-                all_game_content_attributes = [attr.lower() for attr in game['categorias'] + game['tags']]
-                matched_fav_genres_for_game = set() 
+                if edad_usuario < info['edad_minima']:
+                    continue
 
-                for content_item in all_game_content_attributes:
-                    base_weight = self.category_weights[content_item] 
-                    game_score += base_weight
+                attrs = [a.lower() for a in info['categorias'] + info['tags']]
+                raw_score = 0.0
+                bonus     = 0.0
 
-                    if user_fav_genres:
-                        if content_item in user_fav_genres and content_item not in matched_fav_genres_for_game:
-                            game_score += 0.3
-                            matched_fav_genres_for_game.add(content_item)
+                for a in attrs:
+                    raw_score += self.category_weights.get(a, 0.5)
+                    if a in fav_genres:
+                        bonus += 0.3
 
-                if game_score > 0:
-                    scores.append((game_id, game_score))
-            
+                # normalizar
+                if attrs:
+                    score = (raw_score + bonus) / len(attrs)
+                    scores.append((gid, score))
+
+            # ordenar y limitar
             scores.sort(key=lambda x: x[1], reverse=True)
-            num_recommendations = random.randint(min_n, max_n)
-            final_recommendations_raw = scores[:min(num_recommendations, len(scores))]
-            
-            formatted_recommendations: List[Dict[str, Any]] = []
-            for game_id, score in final_recommendations_raw:
-                game_name = self.game_features.get(game_id, {}).get('nombre', 'Nombre Desconocido')
-                formatted_recommendations.append({
-                    "id": game_id,
-                    "nombre": game_name,
-                    "score": round(score, 2)
-                })
-                
-            return formatted_recommendations
+            n = random.randint(min_n, max_n)
+            top = scores[:min(n, len(scores))]
 
+            results: List[Dict[str, Any]] = []
+            for gid, sc in top:
+                game = datos_juegos_data.get(gid, {}).copy()
+                game['id']      = gid
+                game['score']   = round(sc, 3)
+                game['id_user'] = user_id
+                results.append(game)
+
+            return results
+
+    # --- Inicialización global ---
     cold_start_recommender = ColdStartRecommender()
     cold_start_recommender.load_game_data_from_json(datos_juegos_data)
     cold_start_recommender.calculate_category_weights_from_interactions(interacciones_data)
     cold_start_recommender.load_user_data_from_json(usuarios_data)
     print("Cold Start Recommender listo.")
-
+    
     # --- Inicialización para Contenido (recomendacion_contenido_usuario.py) ---
     print("Preparando recomendaciones basadas en Contenido...")
     game_content_list = []
@@ -756,29 +761,22 @@ def get_apriori_recommendations_endpoint(user_id):
 # Endpoint de Recomendaciones Cold Start
 @app.route('/recommendations/cold-start/<int:user_id>', methods=['GET'])
 def get_cold_start_recommendations_endpoint(user_id):
-    """
-    Endpoint para obtener recomendaciones para usuarios en "cold start"
-    basadas en sus datos de perfil (edad, géneros favoritos).
-    """
     if cold_start_recommender is None:
-        return jsonify({"error": "El sistema de recomendación Cold Start no está inicializado."}), 500
-
+        return jsonify({"error": "Cold Start no inicializado."}), 500
     try:
-        recommendations = cold_start_recommender.recommend_for_user(user_id, min_n=5, max_n=10)
-        
-        if not recommendations:
+        recs = cold_start_recommender.recommend_for_user(user_id, min_n=5, max_n=10)
+        if not recs:
             return jsonify({
                 "user_id": user_id,
                 "recommendations": [],
-                "message": f"No se encontraron recomendaciones de cold start para el usuario ID: {user_id}."
+                "message": f"No se encontraron recomendaciones para usuario {user_id}."
             }), 404
-
-        return jsonify({"user_id": user_id, "recommendations": recommendations})
+        return jsonify({"user_id": user_id, "recommendations": recs})
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
     except Exception as e:
-        return jsonify({"error": f"Error interno al generar recomendaciones de cold start: {e}"}), 500
-
+        return jsonify({"error": f"Error interno: {e}"}), 500
+    
 # Endpoint de Recomendaciones Basadas en Contenido
 @app.route('/recommendations/content-based/<int:user_id>', methods=['GET'])
 def user_content_recommendations_endpoint(user_id):

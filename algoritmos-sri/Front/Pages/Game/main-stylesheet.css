@@ -1,0 +1,467 @@
+.darkNav{
+    background-color: #171a21;
+}
+.logoSmall{
+    width: 156.63px;
+    height: 36px;
+}
+.logoBig{
+    width: 65px;
+    height: auto;
+}
+
+a {
+    text-decoration: none;
+}
+
+a :hover{
+    transition: 0.3s;
+    text-decoration: none;
+    color: whitesmoke;
+}
+
+
+.menuItem{
+    display: block;
+    text-decoration: none;
+    padding: 7px;
+    padding-left: 15px;
+    color: #cccdce;
+}
+
+.menuItem:hover{
+    color: whitesmoke;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+@media screen and (min-width: 950px){
+.dropdown .dropdown-menu{
+    display: block; 
+    opacity:0;
+    -webkit-transition: all 150ms ease-in;
+    -moz-transition: all 150ms ease-in;
+    -ms-transition: all 150ms ease-in;
+    -o-transition: all 150ms ease-in;
+    transition: all 150ms ease-in;
+ }
+}
+
+.navbar-nav li:hover>.dropdown-menu {
+    display: block;
+    margin-top: 0px;
+    opacity: 1;
+    text-decoration: none;
+    
+}
+
+
+.video-container {
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+.video-container video {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  object-fit: cover;
+}
+
+.video-container .caption{
+  position: relative;
+  text-align: center;
+  padding: 10px;
+  padding-top: 30px;
+}
+
+.navbarCaption{
+    position: relative;
+    padding: 3px;
+    width: 800px;
+}
+.navbarBg{
+    margin-top: 30px;
+    background-image: linear-gradient(to right, #3786c6 , #223e87);
+    height: 45px;
+}
+
+.navBarItem{
+    color: whitesmoke;
+    text-decoration: none;
+}
+
+.navBarItem:hover{
+    background-color: whitesmoke;
+    opacity: 100%;
+}
+
+@media screen and (max-width: 992px) {
+    
+}
+
+
+.overlay {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 25;
+    top: 0;
+    left: 0;
+    background-color: #171a21;
+    border-top-right-radius: 30px;
+    border-bottom-right-radius: 30px;
+    overflow-x: hidden;
+    transition: 0.5s;
+  }
+  
+  .overlay-content {
+    position: relative;
+    top: 3%;
+    width: 100%;
+    text-align: left;
+    margin-top: 30px;
+  }
+  
+  .overlay a {
+    padding: 8px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    
+    display: block;
+    transition: 0.3s;
+  }
+  
+  .overlay a:hover, .overlay a:focus {
+    color: #f1f1f1;
+    text-decoration: none;
+  }
+  
+  .overlay .closebtn {
+    position: absolute;
+    top: 0px;
+    left: 6px;
+    padding: 10px;
+    padding-top: 3px;
+    font-size: 30px;
+  }
+  
+  @media screen and (max-height: 450px) {
+    .overlay a {font-size: 20px}
+    .overlay .closebtn {
+    font-size: 40px;
+    top: 15px;
+    right: 35px;
+    }
+  }
+
+  .carousel-inner img {
+    width: 100%;
+    height: 100%;
+    
+  }
+  .sidebar {
+    position: absolute;
+    padding-top: 20px;
+    width: 210px;
+    height: 1000px;
+    float: left;
+    margin-left: 1%;
+    color: whitesmoke;
+}
+
+a :hover> .sidebar{
+    text-decoration: none;
+    color: #ccdecc;
+}
+
+.smallCarouselImg{
+    display: inline-block; 
+    width: 33%;
+}
+
+.carousel-caption {
+    position: absolute;
+    right: 10px;
+    bottom: 20px;
+    left: 10px;
+    z-index: 10;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    color: #fff;
+    text-align: center;
+}
+
+.midTitleFont{
+    color: whitesmoke;
+}
+
+#img1{
+    position: relative;
+}
+
+.carouselItem {
+    background-repeat: no-repeat;
+    position: relative;
+    float: left;
+    width: 33%;
+    background-size:cover;
+  }
+  
+.carouselImg {
+    visibility: hidden;
+  }
+
+.carouselCaption{
+    background-color: rgba(55, 134, 198, 0.5);
+    position: absolute; 
+    bottom: 0.1%; 
+    left: 0; 
+    width: 100%; 
+    height: 30%; 
+    text-align: left;
+    padding: 10px;
+    color: whitesmoke;
+    font-weight: 600;
+}
+
+@media screen and (max-width: 860px) {
+    .card-footer{
+        display: none;
+    }
+    #demo{
+        width: 100% !important;
+        margin-left: 0% !important;
+    }
+    #demo2{
+        width: 100% !important;
+        margin-left: 0% !important;
+    }
+}
+/* ACCIÓN: precio arriba-derecha, título abajo-izquierda */
+.accion-card {
+  position: relative;
+  border: 4px solid #c63737;
+  overflow: hidden;
+}
+.card-price {
+  all: unset; /* <-- Resetear herencia (esto es potente) */
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: rgba(198, 55, 55, 0.9);
+  padding: 4px 8px;
+  font-weight: bold;
+  border-radius: 4px;
+  z-index: 2;
+  color: white;
+}
+
+/* --- GRADIENTE + TAGS --- */
+.accion-card .card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: flex-end;
+  padding: 12px;
+  pointer-events: none;
+}
+
+.accion-card:hover .card-overlay {
+  opacity: 1;
+}
+
+.card-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.accion-card:hover .card-tags {
+  opacity: 1;
+}
+
+.tag {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: #fff;
+  text-shadow: 0 0 2px #000;
+}
+
+/* --- PRECIO (siempre visible) --- */
+.card-price {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: rgba(198,55,55,0.9);
+  padding: 4px 8px;
+  font-weight: bold;
+  border-radius: 4px;
+  z-index: 2;
+}
+
+/* --- TÍTULO (se oculta en hover) --- */
+.card-title {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  color: whitesmoke;
+  font-size: 1.1rem;
+  text-shadow: 1px 1px 4px #000;
+  z-index: 2;
+  transition: opacity 0.3s ease;
+}
+
+.accion-card:hover .card-title {
+  opacity: 0;
+}
+
+
+
+
+
+/* AVENTURA */
+/* AVENTURA: cinta de precio + overlay al hover */
+.aventura-card .card-hover {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent); /* MÁS oscuro */
+  color: white;
+  padding: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.8); /* AYUDA EXTRA de contraste */
+}
+
+/* ribbon */
+.aventura-card .card-ribbon {
+  position: absolute;
+  top: 0; left: -40px;
+  width: 160px; height: 32px;
+  background: #3786c6;
+  color: white;
+  text-align: center;
+  line-height: 32px;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+/* hover overlay */
+/* AVENTURA: cinta de precio + overlay al hover */
+.aventura-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform .3s ease;
+}
+.aventura-card:hover {
+  transform: scale(1.03);
+}
+
+/* ribbon */
+.aventura-card .card-ribbon {
+  position: absolute;
+  top: 20px;
+  left: -40px; /* Más hacia la izquierda para ocultar la base */
+  width: 160px;
+  height: 38px;
+  background: #3786c6;
+  color: white;
+  text-align: center;
+  line-height: 38px;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  font-size: 0.85rem;
+
+  /* Recorta visualmente las esquinas para que no se vea la base cuadrada */
+}
+
+
+/* hover overlay */
+.aventura-card .card-hover {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  color: white;
+  padding: 16px;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.aventura-card:hover .card-hover {
+  opacity: 1;
+}
+.aventura-card .card-title {
+  margin: 0; font-size: 1.2rem;
+}
+.aventura-card .card-desc {
+  margin-top: 8px; font-size: .9rem;
+}
+
+
+
+
+/* LUCHA */
+/* LUCHA: barra distanciada, fondo semitransparente */
+/* LUCHA: barra distanciada, fondo semitransparente */
+.lucha-card {
+  position: relative;
+  border-radius: 50px;
+  overflow: hidden;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+  transition: box-shadow .2s ease;
+}
+.lucha-card:hover {
+  box-shadow: 0 12px 24px rgba(0,0,0,0.8);
+}
+
+.lucha-card .card-footer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(128,0,128,0.7);
+}
+.lucha-card .card-title {
+  color: whitesmoke;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.lucha-card .card-price {
+  color: #ffe565;
+  font-size: .95rem;
+  font-weight: bold;
+}
+
+.dropdown-menu a {
+  color: white !important;
+}
+
+.dropdown-menu a:hover {
+  background-color: #2a2a2a !important;
+  color: #0df !important;
+}
+
+/* Puedes mantener tu estructura HTML/JS actual con style="width: 100%; height: auto;" */
+
+.carousel-item img {
+    width: 100%;
+    height: auto; /* Para que la altura se ajuste automáticamente al ancho */
+    max-height: 500px; /* Puedes poner un max-height si no quieres que sean excesivamente altas */
+    object-fit: contain; /* **CLAVE:** Escala la imagen para que quepa completamente dentro del contenedor, sin recortes. */
+    display: block;
+}
