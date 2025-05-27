@@ -439,7 +439,8 @@ def recomendar_juegos_tfidf(user_id, all_interactions, all_games_data, content_s
     highly_rated_game_ids = []
     for interaction in user_interactions:
         game_id_str = str(interaction.get('id_juego'))
-        if (interaction.get('calificacion', 0) >= 4.0 or interaction.get('like', False)) and interaction.get('horas_jugadas', 0) > 0:
+        #if (interaction.get('calificacion', 0) >= 4.0 or interaction.get('like', False)) and interaction.get('horas_jugadas', 0) > 0:
+        if (interaction.get('calificacion', 0) >= 4.0 or interaction.get('like', False)):
             highly_rated_game_ids.append(game_id_str)
 
     if not highly_rated_game_ids:
