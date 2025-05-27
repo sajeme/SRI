@@ -24,13 +24,13 @@ function updateDynamicTitles() {
   else if (popularRecType === 'top-rated-fallback') p.textContent = "Los Más Valorados Globalmente";
   else                                               p.textContent = "Los más jugados";
 
-  // Aventura...
+  // carousel aventura
   if (adventureRecType === 'item-based')          a.textContent = "Basado en contenido";
   else if (adventureRecType === 'top-rated-fallback') a.textContent = "Top Global";
   // else se queda con el HTML por defecto
 
-  // Acción...
-  if (accionRecType === 'content-based')          c.textContent = "Recomendada para Ti";
+  // Acción carousel
+  if (accionRecType === 'content-based')          c.textContent = "Recomendado para Ti";
   // else se queda con el HTML por defecto
 }
 
@@ -272,53 +272,118 @@ function buildAdventureCarousel(containerId, gamesData, itemsPerSlide = 3) {
 
 // Función para obtener datos de la API para "Lo Nuevo de 2025" (demo)
 async function fetchCarouselDataNewAndNoteworthy(isLoggedIn, userId = null) {
-    let recommendations = [];
-
     if (isLoggedIn && userId !== null) {
-        // 0) Carga local de interacciones para ver si hay datos del usuario
-        let interaccionesData;
-        try {
-            const respInt = await fetch('../../../interacciones.json')
+        let proceedToColdStart = false;
+        let proceedToUserBased = false;
 
-            interaccionesData = respInt.ok
-                ? await respInt.json()
-                : { interacciones: [] };
+        // 1) Check user interactions using the new endpoint
+        const checkInteractionsUrl = `http://localhost:5000/interacciones/${userId}/check`;
+        console.log(`Checking interactions for user ${userId} at ${checkInteractionsUrl}`);
+        try {
+            const respCheck = await fetch(checkInteractionsUrl);
+            if (respCheck.ok) {
+                const checkData = await respCheck.json();
+                console.log(`Interaction check for user ${userId}:`, checkData);
+                if (checkData.exists && checkData.has_interactions) { // User exists and has interactions
+                    proceedToUserBased = true;
+                } else { // User exists but no interactions, or user doesn't exist in interacciones.json (new user for recommendations)
+                    proceedToColdStart = true;
+                }
+            } else if (respCheck.status === 404) { // User not found by the check endpoint, definite cold-start case
+                console.log(`User ${userId} not found in interactions system, proceeding to cold-start.`);
+                proceedToColdStart = true;
+            } else {
+                // Other HTTP error checking interactions, might fallback to general or try cold-start as a guess
+                console.error(`Error checking interactions for user ${userId}: ${respCheck.status}. Falling back.`);
+                // Decide fallback: could be cold-start or general. For now, let's try cold-start.
+                proceedToColdStart = true; // Or set a flag to go to general recommendations later
+            }
         } catch (e) {
-            console.error('No se pudo cargar interacciones:', e);
-            interaccionesData = { interacciones: [] };
+            console.error(`Network error checking interactions for user ${userId}:`, e);
+            // Network error, might fallback to general or try cold-start
+            proceedToColdStart = true; // Or set a flag to go to general recommendations later
         }
 
-        // 1) ¿Existe usuario en interacciones.json y tiene elementos?
-        const userEntry = interaccionesData.interacciones
-            .find(u => u.id === userId);
-        const hasInteracted = userEntry && userEntry.interacciones.length > 0;
-
-        // 2) Si NO hay interacciones → Cold-Start
-        if (!hasInteracted) {
+        // 2) If NO interactions or new user -> Cold-Start
+        if (proceedToColdStart) {
             newAndNoteworthyRecType = 'cold-start';
             const coldStartUrl = `http://localhost:5000/recommendations/cold-start/${userId}`;
-            console.log(`Usuario sin interacciones; usando cold-start para ${userId}.`);
-            const respCold = await fetch(coldStartUrl);
-            const dataCold = respCold.ok && await respCold.json();
-            return dataCold?.recommendations || [];
+            console.log(`User ${userId} requires cold-start. Fetching from: ${coldStartUrl}`);
+            try {
+                const respCold = await fetch(coldStartUrl);
+                if (respCold.ok) {
+                    const dataCold = await respCold.json();
+                    // Ensure dataCold and its recommendations are valid before returning
+                    if (dataCold && dataCold.recommendations) {
+                        console.log(`Cold-start recommendations for user ${userId}:`, dataCold.recommendations);
+                        return dataCold.recommendations;
+                    } else {
+                        console.warn(`Cold-start response for user ${userId} is OK but no recommendations array found or data is null.`);
+                        return [];
+                    }
+                } else {
+                    console.error(`Error fetching cold-start recommendations for user ${userId}: ${respCold.status}`);
+                    return []; // Fallback to empty if cold-start API fails
+                }
+            } catch (e) {
+                console.error(`Network error fetching cold-start for user ${userId}:`, e);
+                return [];
+            }
         }
 
-        // 3) Si HAY interacciones → Collaborative user-based
-        newAndNoteworthyRecType = 'apriori';  // o mejor renómbralo a 'user-based'
-        const collabUrl = `http://localhost:5000/recommendations/collaborative/user-based/${userId}`;
-        console.log(`Usuario con interacciones; usando collaborative para ${userId}.`);
-        const respCollab = await fetch(collabUrl);
-        const dataCollab = respCollab.ok && await respCollab.json();
-        return dataCollab?.recommendations || [];
+        // 3) If HAS interactions -> Collaborative user-based
+        if (proceedToUserBased) {
+            newAndNoteworthyRecType = 'apriori'; // Or 'user-based'
+            const collabUrl = `http://localhost:5000/recommendations/collaborative/user-based/${userId}`;
+            console.log(`User ${userId} has interactions. Fetching collaborative user-based from: ${collabUrl}`);
+            try {
+                const respCollab = await fetch(collabUrl);
+                if (respCollab.ok) {
+                    const dataCollab = await respCollab.json();
+                    if (dataCollab && dataCollab.recommendations) {
+                        console.log(`Collaborative recommendations for user ${userId}:`, dataCollab.recommendations);
+                        return dataCollab.recommendations;
+                    } else {
+                        console.warn(`Collaborative response for user ${userId} is OK but no recommendations array found or data is null.`);
+                        return [];
+                    }
+                } else {
+                    console.error(`Error fetching collaborative recommendations for user ${userId}: ${respCollab.status}`);
+                    return []; // Fallback to empty if collaborative API fails
+                }
+            } catch (e) {
+                console.error(`Network error fetching collaborative for user ${userId}:`, e);
+                return [];
+            }
+        }
+        // If neither proceedToColdStart nor proceedToUserBased is true after the check (shouldn't happen with current logic, but as a safeguard)
+        // Fall through to general recommendations for non-logged-in users.
     }
 
-    // 4) Flujo para no logeados
+    // 4) Fallback or Flow for non-logged-in users
     newAndNoteworthyRecType = 'general';
-    const url = 'http://localhost:5000/recommend/action2025';
-    const resp = await fetch(url);
-    const data = resp.ok && await resp.json();
-    return data?.recommendations || [];
+    const generalUrl = 'http://localhost:5000/recommend/action2025'; // Assuming this is your general endpoint
+    console.log("Fetching general 'New and Noteworthy' recommendations.");
+    try {
+        const respGeneral = await fetch(generalUrl);
+        if (respGeneral.ok) {
+            const dataGeneral = await respGeneral.json();
+            if (dataGeneral && dataGeneral.recommendations) {
+                return dataGeneral.recommendations;
+            } else {
+                console.warn('General recommendations response is OK but no recommendations array found or data is null.');
+                return [];
+            }
+        } else {
+            console.error(`Error fetching general recommendations: ${respGeneral.status}`);
+            return [];
+        }
+    } catch (e) {
+        console.error('Network error fetching general recommendations:', e);
+        return [];
+    }
 }
+
 
 // Nueva función para obtener datos de la API para "Juegos más populares" (demo2)
 async function fetchCarouselDataPopular(isLoggedIn, userId = null) {

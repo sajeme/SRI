@@ -1374,6 +1374,64 @@ def check_user_interacciones(user_id):
         "has_interactions": interactions_count > 0
     })
 
+# En tu archivo Flask (app.py o similar)
+
+def _load_interacciones_data():
+    try:
+        with open('interacciones.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"interacciones": []} # Devuelve una estructura vacía si el archivo no existe
+    except json.JSONDecodeError:
+        return {"interacciones": []} # Devuelve vacío si hay error de parseo
+
+@app.route('/games/<string:game_id>/aggregate-interactions', methods=['GET'])
+def get_aggregate_interactions(game_id):
+    interacciones_data_root = _load_interacciones_data()
+    all_user_interactions = interacciones_data_root.get('interacciones', [])
+
+    total_likes = 0
+    total_dislikes = 0
+    ratings_sum = 0
+    rating_count = 0
+
+    for user_entry in all_user_interactions:
+        for interaction in user_entry.get('interacciones', []):
+            if str(interaction.get('id_juego')) == str(game_id):
+                # Contar likes/dislikes
+                if interaction.get('like') is True:
+                    total_likes += 1
+                elif interaction.get('like') is False:
+                    total_dislikes += 1
+                
+                # Sumar calificaciones válidas
+                calificacion = interaction.get('calificacion')
+                if calificacion is not None:
+                    try:
+                        # Asegurarse que la calificación sea un número y esté en un rango esperado (ej. 1-5)
+                        rating_value = float(calificacion)
+                        if 1 <= rating_value <= 5: # Asumiendo un rango de 1 a 5
+                            ratings_sum += rating_value
+                            rating_count += 1
+                    except ValueError:
+                        pass # Ignorar calificaciones no numéricas
+
+    average_rating = None
+    if rating_count > 0:
+        average_rating = ratings_sum / rating_count
+
+    # Si no hay interacciones para este juego, podríamos devolver 404 o simplemente ceros.
+    # Devolver ceros es más simple para el frontend en este caso.
+    # if total_likes == 0 and total_dislikes == 0 and rating_count == 0:
+    #     return jsonify({"message": f"No interaction data found for game_id {game_id}"}), 404
+        
+    return jsonify({
+        "game_id": game_id,
+        "total_likes": total_likes,
+        "total_dislikes": total_dislikes,
+        "average_rating": average_rating, # Puede ser null si rating_count es 0
+        "rating_count": rating_count
+    })
 
 # Punto de trada principal para ejecutar la aplicación Flask
 if __name__ == '__main__':

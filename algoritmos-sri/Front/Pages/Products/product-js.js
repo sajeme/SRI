@@ -395,6 +395,66 @@ function displayGameDetails(gameData) {
         });
     }
 }
+async function fetchAndDisplayAggregateInteractions(gameId) {
+    const section = document.getElementById('aggregateInteractionsSection');
+    const totalLikesEl = document.getElementById('totalLikes');
+    const totalDislikesEl = document.getElementById('totalDislikes');
+    const averageRatingEl = document.getElementById('averageRating');
+    const ratingCountEl = document.getElementById('ratingCount');
+
+    // Asegurarse de que todos los elementos existan
+    if (!section || !totalLikesEl || !totalDislikesEl || !averageRatingEl || !ratingCountEl) {
+        console.warn("Elementos para mostrar interacciones agregadas no encontrados en el DOM.");
+        return;
+    }
+
+    try {
+        // Debes crear este endpoint en tu backend (Flask)
+        // Debería leer interacciones.json, calcular los agregados para gameId y devolverlos
+        const response = await fetch(`http://localhost:5000/games/${gameId}/aggregate-interactions`);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                console.log(`No hay datos de interacción agregados para el juego ${gameId}. Se mostrarán valores por defecto.`);
+                // Mostrar valores por defecto ya que no hay datos, pero mostrar la sección
+                totalLikesEl.textContent = '0';
+                totalDislikesEl.textContent = '0';
+                averageRatingEl.textContent = 'N/A';
+                ratingCountEl.textContent = '0';
+            } else {
+                // Otro error HTTP
+                console.error(`Error HTTP al obtener interacciones agregadas: ${response.status}`);
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+        } else {
+            const data = await response.json();
+            console.log("Datos de interacción agregados recibidos:", data);
+
+            totalLikesEl.textContent = data.total_likes !== undefined ? data.total_likes.toLocaleString() : '0';
+            totalDislikesEl.textContent = data.total_dislikes !== undefined ? data.total_dislikes.toLocaleString() : '0';
+
+            if (data.rating_count > 0 && data.average_rating !== undefined && data.average_rating !== null) {
+                averageRatingEl.textContent = `${parseFloat(data.average_rating).toFixed(1)} estrellas`; // Ej: "4.5 estrellas"
+                ratingCountEl.textContent = data.rating_count.toLocaleString();
+            } else {
+                averageRatingEl.textContent = 'N/A';
+                ratingCountEl.textContent = '0';
+            }
+        }
+        section.style.display = 'block'; // Hacer visible la sección
+    } catch (error) {
+        console.error("Error al obtener o mostrar las interacciones agregadas del juego:", error);
+        // Opcional: Mostrar un mensaje de error en la UI si la sección es crítica
+        // Por ahora, simplemente no se mostrarán datos actualizados o se quedarán los defaults.
+        // Y la sección podría quedarse oculta o mostrar "Error al cargar".
+        // Para mantener la consistencia con el caso 404, mostramos defaults y la sección:
+        totalLikesEl.textContent = '-';
+        totalDislikesEl.textContent = '-';
+        averageRatingEl.textContent = 'Error';
+        ratingCountEl.textContent = '-';
+        section.style.display = 'block';
+    }
+}
 async function fetchAndDisplaySimilarGames(gameId) {
     const similarGamesContainer = document.getElementById('similarGamesCarouselInner');
     const similarGamesSection = document.getElementById('similarGamesCarousel'); // El contenedor del carrusel
@@ -566,27 +626,30 @@ async function loadProductDetails() {
 
     if (gameId) {
         const gameData = await fetchGameDetails(gameId);
-        if (gameData) { // Solo mostrar detalles y cargar recomendaciones si gameData es válido
-            displayGameDetails(gameData);
-            document.title = gameData.nombre || "Detalles del Juego"; // Actualizar título de la página
+        if (gameData) { 
+            displayGameDetails(gameData); //
+            document.title = gameData.nombre || "Detalles del Juego"; 
 
-            // Actualizar título dinámico de "Juegos similares"
             const similarTitleEl = document.getElementById("similarGamesTitle");
             if (similarTitleEl && gameData.nombre) {
                 similarTitleEl.textContent = `Juegos similares a "${gameData.nombre}"`;
             }
-            await fetchAndDisplaySimilarGames(gameId); // Llamar a la función de recomendaciones
+            // Llamar a las funciones para cargar datos adicionales en paralelo para eficiencia
+            await Promise.all([
+                fetchAndDisplaySimilarGames(gameId),
+                fetchAndDisplayAggregateInteractions(gameId) // <--- NUEVA LLAMADA
+            ]);
         } else {
-            // gameHighlightDiv ya es manejado por displayGameDetails si gameData es null
-            // pero podrías querer un mensaje más genérico aquí o en fetchGameDetails
-            document.getElementById('pageTitle').textContent = "Juego no encontrado";
+            document.title = "Juego no encontrado"; // Actualiza el título de la página si gameData es null
+            // displayGameDetails ya maneja el caso de gameData nulo mostrando un mensaje.
         }
     } else {
         console.error("No se encontró el ID del juego (game_id) en la URL.");
         gameHighlightDiv.innerHTML = '<p class="text-light text-center p-5">Lo sentimos, no se especificó un juego para mostrar. Por favor, asegúrate de que la URL contenga un parámetro "game_id".</p>';
-        document.getElementById('pageTitle').textContent = "Error - Juego no especificado";
+        document.title = "Error - Juego no especificado"; // Actualiza el título de la página
     }
 }
+
 
 document.addEventListener("DOMContentLoaded", async function () {
     const user = JSON.parse(localStorage.getItem("usuario"));
@@ -595,6 +658,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     if (cuentaMenu && cuentaOpciones) {
         if (user) {
+            currentUserId = user.id; // Almacenar el ID del usuario globalmente si está logeado
             cuentaMenu.textContent = `Hola, ${user.nombre}`;
             cuentaOpciones.innerHTML = `
                 <a class="dropdown-item menuItem" href="#" onclick="logout()">Cerrar sesión</a>
@@ -607,6 +671,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             `;
         }
 
+        // Hover para dropdown (existente)
         document.querySelectorAll('.nav-item.dropdown').forEach(item => {
             item.addEventListener('mouseenter', () => {
                 item.classList.add('show');
@@ -623,5 +688,5 @@ document.addEventListener("DOMContentLoaded", async function () {
         console.warn("Elementos de menú de cuenta no encontrados. La funcionalidad de usuario puede estar limitada.");
     }
 
-    await loadProductDetails();
+    await loadProductDetails(); //
 });
