@@ -1,4 +1,39 @@
 // main-js.js
+
+// 1) VARIABLES GLOBALES para el tipo de recomendación
+let newAndNoteworthyRecType = 'general';
+let popularRecType          = 'general';
+let adventureRecType        = 'general';
+let accionRecType           = 'general';
+
+// 2) FUNCIÓN que actualiza los títulos
+function updateDynamicTitles() {
+  const n = document.getElementById('newAndNoteworthyDynamicTitle');
+  const p = document.getElementById('popularDynamicTitle');
+  const a = document.getElementById('adventureDynamicTitle');
+  const c = document.getElementById('accionDynamicTitle');
+  if (!n||!p||!a||!c) return console.error("Título dinámico no encontrado");
+
+  // Lo Nuevo...
+  if (newAndNoteworthyRecType === 'apriori')      n.textContent = "Recomendaciones para ti";
+  else if (newAndNoteworthyRecType === 'cold-start') n.textContent = "Comienza tu Aventura";
+  else                                               n.textContent = "Lo Nuevo de 2025";
+
+  // Populares...
+  if (popularRecType === 'association')            p.textContent = "Juegos Populares";
+  else if (popularRecType === 'top-rated-fallback') p.textContent = "Los Más Valorados Globalmente";
+  else                                               p.textContent = "Los más jugados";
+
+  // Aventura...
+  if (adventureRecType === 'item-based')          a.textContent = "Basado en contenido";
+  else if (adventureRecType === 'top-rated-fallback') a.textContent = "Top Global";
+  // else se queda con el HTML por defecto
+
+  // Acción...
+  if (accionRecType === 'content-based')          c.textContent = "Recomendada para Ti";
+  // else se queda con el HTML por defecto
+}
+
 function openNav() {
     document.getElementById("myNav").style.width = "50%";
     var elements = document.getElementsByClassName("bg");
@@ -81,7 +116,7 @@ function buildSingleItemCarousel(containerId, gamesData) {
 }
 
 // Nueva función para construir el carrusel con múltiples items por slide (para 'demo2' - "Juegos más populares")
-function buildMultiItemCarousel(containerId, gamesData, itemsPerSlide = 3) {
+function buildMultiItemCarousel(containerId, gamesData, itemsPerSlide = 3, recommendationType = 'general') {
     const carouselContainer = document.getElementById(containerId);
     if (!carouselContainer) {
         console.error(`Contenedor de carrusel con ID '${containerId}' no encontrado.`);
@@ -95,7 +130,7 @@ function buildMultiItemCarousel(containerId, gamesData, itemsPerSlide = 3) {
         return;
     }
 
-    let indicatorsHtml = '<ul class="carousel-indicators" style="display: none;">'; // Ocultar indicadores como en el HTML original
+    let indicatorsHtml = '<ul class="carousel-indicators" style="display: none;">';
     let innerHtml = '<div class="carousel-inner">';
 
     // Agrupar juegos en slides de 'itemsPerSlide'
@@ -107,16 +142,34 @@ function buildMultiItemCarousel(containerId, gamesData, itemsPerSlide = 3) {
         innerHtml += `<div class="carousel-item ${activeClass}">`;
 
         slideGames.forEach(game => {
-            const imageUrl = game.portada || 'https://via.placeholder.com/600x400?text=No+Image'; // Fallback image
-            const gameLink = `../Products/product.html?game_id=${game.id}`;
+            const imageUrl = game.portada || 'https://via.placeholder.com/600x400?text=No+Image';
+            const recommendedGameId = game.id || game.appid || game.game_id;
+            const gameLink = `../Products/product.html?game_id=${recommendedGameId}`;
             const gameName = game.nombre || 'Nombre Desconocido';
-            // Formatear precio si existe, usando 'Gratis' si no hay datos de precio
             const gamePrice = game.resumen_precio && game.resumen_precio.final_formatted
                                 ? game.resumen_precio.final_formatted
                                 : 'Gratis';
 
+            let associationReasonHtml = ''; // This will be an empty string if no association reason
+            // Check if it's an association recommendation and if the game has 'based_on_games' info
+            if (recommendationType === 'association' && game.based_on_games && game.based_on_games.length > 0) {
+                const basedOnGame = game.based_on_games[0]; // Take the first game as the basis
+                // Ensure basedOnGame.id is available for linking
+                if (basedOnGame && basedOnGame.id && basedOnGame.nombre) {
+                    const basedOnGameLink = `../Products/product.html?game_id=${basedOnGame.id}`;
+                    associationReasonHtml = `
+                        <div class="association-reason" style="position: absolute; top: 5px; left: 5px; background-color: rgba(40, 88, 126, 0.9); color: white; padding: 5px 8px; font-size: 0.75em; border-radius: 4px; z-index: 10; max-width: 90%;">
+                            Porque te gustó <a href="${basedOnGameLink}" style="color: #a7d5f1; text-decoration: underline;" target="_blank">${truncateText(basedOnGame.nombre, 25)}</a>
+                        </div>
+                    `;
+                }
+            }
+
+            // Corrected line: The JavaScript comment is removed from here.
+            // associationReasonHtml will either contain the div or be an empty string.
             innerHtml += `
                 <div class="carouselItem" style="background-image: url(${imageUrl});">
+                    ${associationReasonHtml} 
                     <a href="${gameLink}">
                         <img class="carouselImg" src="${imageUrl}" alt="${gameName}">
                         <span class="carouselCaption">${gameName} <br> ${gamePrice}</span>
@@ -222,67 +275,49 @@ async function fetchCarouselDataNewAndNoteworthy(isLoggedIn, userId = null) {
     let recommendations = [];
 
     if (isLoggedIn && userId !== null) {
-        // 1. Try to get Apriori recommendations first
-        const aprioriUrl = `http://localhost:5000/recommendations/collaborative/user-based/${userId}`; // Assuming this is your Apriori endpoint
-        console.log(`Attempting to fetch Apriori recommendations for user ${userId}.`);
-
+        // 0) Carga local de interacciones para ver si hay datos del usuario
+        let interaccionesData;
         try {
-            const responseUserBased = await fetch(aprioriUrl);
-            if (responseUserBased.ok) {
-                const dataUserBased = await responseUserBased.json();
-                recommendations = dataUserBased.recommendations || [];
+            const respInt = await fetch('../../../interacciones.json')
 
-                if (recommendations.length > 0) {
-                    console.log(`Apriori recommendations found for user ${userId}:`, recommendations);
-                    return recommendations; // If Apriori recommendations exist, return them
-                } else {
-                    console.log(`No Apriori recommendations found for user ${userId}. Falling back to cold-start.`);
-                    // Fall through to the cold-start logic if no Apriori recommendations
-                }
-            } else {
-                console.error(`HTTP error (${responseUserBased.status}) fetching Apriori recommendations for user ${userId}. Falling back to cold-start.`);
-                // Fall through to the cold-start logic on error
-            }
-        } catch (error) {
-            console.error('Network error fetching Apriori recommendations:', error);
-            // Fall through to the cold-start logic on network error
+            interaccionesData = respInt.ok
+                ? await respInt.json()
+                : { interacciones: [] };
+        } catch (e) {
+            console.error('No se pudo cargar interacciones:', e);
+            interaccionesData = { interacciones: [] };
         }
 
-        // 2. If no Apriori recommendations were found or there was an error, get cold-start recommendations
-        const coldStartUrl = `http://localhost:5000/recommendations/cold-start/${userId}`;
-        console.log(`Soliciting cold-start recommendations for user ${userId}.`);
+        // 1) ¿Existe usuario en interacciones.json y tiene elementos?
+        const userEntry = interaccionesData.interacciones
+            .find(u => u.id === userId);
+        const hasInteracted = userEntry && userEntry.interacciones.length > 0;
 
-        try {
-            const responseColdStart = await fetch(coldStartUrl);
-            if (!responseColdStart.ok) {
-                console.error(`HTTP error! status: ${responseColdStart.status} from ${coldStartUrl}`);
-                return []; // Return empty if cold-start fails
-            }
-            const dataColdStart = await responseColdStart.json();
-            recommendations = dataColdStart.recommendations || [];
-            console.log(`Cold-start recommendations obtained:`, recommendations);
-            return recommendations;
-        } catch (error) {
-            console.error('Error fetching cold-start recommendations:', error);
-            return [];
+        // 2) Si NO hay interacciones → Cold-Start
+        if (!hasInteracted) {
+            newAndNoteworthyRecType = 'cold-start';
+            const coldStartUrl = `http://localhost:5000/recommendations/cold-start/${userId}`;
+            console.log(`Usuario sin interacciones; usando cold-start para ${userId}.`);
+            const respCold = await fetch(coldStartUrl);
+            const dataCold = respCold.ok && await respCold.json();
+            return dataCold?.recommendations || [];
         }
 
-    } else {
-        // Logic for non-logged-in users (always uses the general "New and Noteworthy" endpoint)
-        const url = 'http://localhost:5000/recommend/action2025';
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                console.error(`HTTP error! status: ${response.status} from ${url}`);
-                return [];
-            }
-            const data = await response.json();
-            return data.recommendations || [];
-        } catch (error) {
-            console.error('Error fetching "New and Noteworthy" carousel data for non-logged-in user:', error);
-            return [];
-        }
+        // 3) Si HAY interacciones → Collaborative user-based
+        newAndNoteworthyRecType = 'apriori';  // o mejor renómbralo a 'user-based'
+        const collabUrl = `http://localhost:5000/recommendations/collaborative/user-based/${userId}`;
+        console.log(`Usuario con interacciones; usando collaborative para ${userId}.`);
+        const respCollab = await fetch(collabUrl);
+        const dataCollab = respCollab.ok && await respCollab.json();
+        return dataCollab?.recommendations || [];
     }
+
+    // 4) Flujo para no logeados
+    newAndNoteworthyRecType = 'general';
+    const url = 'http://localhost:5000/recommend/action2025';
+    const resp = await fetch(url);
+    const data = resp.ok && await resp.json();
+    return data?.recommendations || [];
 }
 
 // Nueva función para obtener datos de la API para "Juegos más populares" (demo2)
@@ -301,6 +336,7 @@ async function fetchCarouselDataPopular(isLoggedIn, userId = null) {
                 recommendations = dataAssociation.recommendations || [];
                 if (recommendations.length > 0) {
                     console.log(`Association recommendations found for user ${userId}:`, recommendations);
+                    popularRecType = 'association';
                     return recommendations; // If association recommendations exist, return them
                 } else {
                     console.log(`No association recommendations found for user ${userId}. Falling back to top_rated.`);
@@ -327,6 +363,7 @@ async function fetchCarouselDataPopular(isLoggedIn, userId = null) {
             }
             const dataTopRated = await responseTopRated.json();
             recommendations = dataTopRated.recommendations || [];
+            popularRecType = 'top-rated-fallback';
             console.log(`Global top-rated recommendations obtained:`, recommendations);
             return recommendations;
         } catch (error) {
@@ -337,6 +374,7 @@ async function fetchCarouselDataPopular(isLoggedIn, userId = null) {
     } else {
         // Logic for non-logged-in users (always uses the global "Most Played" endpoint)
         const mostPlayedUrl = 'http://localhost:5000/global/most_played';
+        popularRecType = 'general';
         console.log("Fetching global most played games for non-logged-in user.");
         try {
             const response = await fetch(mostPlayedUrl);
@@ -359,9 +397,11 @@ async function fetchCarouselDataAdventure(isLoggedIn, userId = null) {
     let url;
     if (isLoggedIn && userId !== null) {
         url = `http://localhost:5000/recommendations/collaborative/item-based/${userId}`;
+        adventureRecType = 'item-based'
         console.log(`Workspaceing item-based collaborative recommendations for user ${userId} for Adventure carousel.`);
     } else {
         url = 'http://localhost:5000/global/top_rated';
+        adventureRecType = 'top-rated-fallback'
         console.log("Fetching global top-rated games for Adventure carousel (non-logged-in or fallback).");
     }
 
@@ -371,14 +411,17 @@ async function fetchCarouselDataAdventure(isLoggedIn, userId = null) {
             console.error(`HTTP error! status: ${response.status} from ${url}`);
             return [];
         }
+
         const data = await response.json();
-        // Adjust based on the actual API response structure if 'recommendations' is nested
-        return data.recommendations || data.items || [];
+        const recs = data.recommendations || data.items || [];
+
+        return recs;
     } catch (error) {
         console.error('Error fetching "Explora la AVENTURA" carousel data:', error);
         return [];
     }
 }
+
 
 function buildAccionCarousel(containerId, gamesData, itemsPerSlide = 3) {
     const carouselContainer = document.getElementById(containerId);
@@ -461,29 +504,33 @@ async function fetchCarouselDataAccion(isLoggedIn, userId = null) {
         url = `http://localhost:5000/recommendations/content-based/${userId}`;
         console.log(`Workspaceing content-based recommendations for user ${userId} for Accion carousel.`);
     } else {
-        // Si no está logeado, no deberíamos llamar a esta API de recomendaciones de contenido
-        // y por lo tanto, no se mostrará el carrusel. Retornamos vacío.
         console.log("No logged-in user, skipping content-based recommendations for Accion carousel.");
         return [];
     }
 
     try {
         const response = await fetch(url);
-        // Manejar errores 400 y 404 específicamente como lista vacía para ocultar
         if (!response.ok) {
             console.error(`HTTP error! status: ${response.status} from ${url}`);
-            // Si es 404 o 400, o cualquier otro error, se trata como no recomendaciones.
             return [];
         }
+
         const data = await response.json();
-        // Asegúrate de que 'recommendations' es el array correcto en la respuesta JSON
-        return data.recommendations || [];
+        const recs = data.recommendations || [];
+
+        // ← Aquí asignas el recType antes de devolver
+        accionRecType = recs.length > 0
+            ? 'content-based'
+            : 'general';
+
+        return recs;
     } catch (error) {
         console.error('Error fetching "Accion" carousel data:', error);
         return [];
     }
 }
-// main-js.js
+
+
 
 // ... (todas tus funciones anteriores, incluyendo fetchCarouselDataAdventure y buildAdventureCarousel) ...
 
@@ -495,9 +542,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const mainCarouselId = "demo";
     const popularCarouselId = "demo2";
     const adventureCarouselId = "demoAventura";
-    // Referencia al ID del contenedor del título de Aventura
     const adventureTitleContainerId = "adventureTitleContainer";
-    // Nuevos IDs para el carrusel de ACCIÓN
     const accionCarouselId = "demoAccion";
     const accionTitleContainerId = "accionTitleContainer";
 
@@ -507,114 +552,106 @@ document.addEventListener("DOMContentLoaded", async () => {
     let gamesNewAndNoteworthy = [];
     let gamesPopular = [];
     let gamesAdventure = [];
-    let gamesAccion = []; // **AGREGADO: Variable para las recomendaciones de ACCIÓN**
+    let gamesAccion = [];
     let userId = null;
 
-    if (user) {
-        console.log("Usuario logeado:", user);
-        console.log("ID del usuario:", user.id);
-        cuentaMenu.textContent = `Hola, ${user.nombre}`;
-        cuentaOpciones.innerHTML = `
-            <a class="dropdown-item menuItem" href="#" id="logoutBtn">Cerrar sesión</a>
-        `;
-        document.getElementById("logoutBtn")
-            .addEventListener("click", () => {
-                localStorage.removeItem("usuario");
-                window.location.href = "../Login/login.html";
-            });
-
+    if (user && user.id) {
+        console.log("Usuario logeado:", user.nombre, "ID:", user.id);
         userId = user.id;
-        if (userId) {
-            gamesNewAndNoteworthy = await fetchCarouselDataNewAndNoteworthy(true, userId);
-            gamesPopular = await fetchCarouselDataPopular(true, userId);
-            gamesAdventure = await fetchCarouselDataAdventure(true, userId);
-            gamesAccion = await fetchCarouselDataAccion(true, userId); // **AGREGADO: Llamada para obtener datos de ACCIÓN**
-        } else {
-            console.warn("Usuario logeado pero sin ID encontrado. Mostrando recomendaciones generales.");
-            gamesNewAndNoteworthy = await fetchCarouselDataNewAndNoteworthy(false);
-            gamesPopular = await fetchCarouselDataPopular(false);
-            gamesAdventure = await fetchCarouselDataAdventure(false);
-            gamesAccion = []; // **AGREGADO: Vacío si no hay userId**
-        }
+        cuentaMenu.textContent = `Hola, ${user.nombre}`;
+        cuentaOpciones.innerHTML = `<a class="dropdown-item menuItem" href="#" id="logoutBtn">Cerrar sesión</a>`;
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            localStorage.removeItem("usuario");
+            window.location.href = "../Login/login.html";
+        });
+
+        // Fetch data in parallel for logged-in user
+        [
+            gamesNewAndNoteworthy,
+            gamesPopular,
+            gamesAdventure,
+            gamesAccion
+        ] = await Promise.all([
+            fetchCarouselDataNewAndNoteworthy(true, userId),
+            fetchCarouselDataPopular(true, userId),
+            fetchCarouselDataAdventure(true, userId),
+            fetchCarouselDataAccion(true, userId)
+        ]);
 
     } else {
+        console.log("Usuario no logeado o sin ID.");
         cuentaMenu.textContent = "Cuenta";
         cuentaOpciones.innerHTML = `
             <a class="dropdown-item menuItem" href="../Login/login.html">Inicia Sesión</a>
             <a class="dropdown-item menuItem" href="../Register/register.html">Regístrate</a>
         `;
-
-        gamesNewAndNoteworthy = await fetchCarouselDataNewAndNoteworthy(false);
-        gamesPopular = await fetchCarouselDataPopular(false);
-        gamesAdventure = await fetchCarouselDataAdventure(false);
-        gamesAccion = []; // **AGREGADO: Siempre vacío si no está logeado**
+        // Fetch data for non-logged-in user
+        [
+            gamesNewAndNoteworthy,
+            gamesPopular,
+            gamesAdventure, // Will get 'top-rated-fallback'
+            gamesAccion     // Will be empty as per fetchCarouselDataAccion logic
+        ] = await Promise.all([
+            fetchCarouselDataNewAndNoteworthy(false),
+            fetchCarouselDataPopular(false),
+            fetchCarouselDataAdventure(false),
+            fetchCarouselDataAccion(false)
+        ]);
     }
 
-    // Construir los carruseles dinámicamente
-
-    // Carrusel "Lo Nuevo de 2025"
     buildSingleItemCarousel(mainCarouselId, gamesNewAndNoteworthy);
+    // Pass popularRecType (which is set globally by fetchCarouselDataPopular)
+    buildMultiItemCarousel(popularCarouselId, gamesPopular, 3, popularRecType);
 
-    // Carrusel "Juegos más populares"
-    buildMultiItemCarousel(popularCarouselId, gamesPopular);
 
-    // --- Lógica para mostrar/ocultar el carrusel de Aventura ---
     const adventureCarouselDiv = document.getElementById(adventureCarouselId);
     const adventureTitleDiv = document.getElementById(adventureTitleContainerId);
-
-    // Si el usuario está logeado Y no se encontraron recomendaciones de aventura, ocultar la sección
     if (user && gamesAdventure.length === 0) {
-        if (adventureCarouselDiv) {
-            adventureCarouselDiv.style.display = 'none';
-        }
-        if (adventureTitleDiv) {
-            adventureTitleDiv.style.display = 'none';
-        }
-        console.log("Explora la AVENTURA carousel y título ocultos: Usuario logeado sin recomendaciones encontradas.");
+        if (adventureCarouselDiv) adventureCarouselDiv.style.display = 'none';
+        if (adventureTitleDiv) adventureTitleDiv.style.display = 'none';
+        console.log("AVENTURA carousel oculto: Logeado sin recomendaciones.");
     } else {
-        // Si hay juegos O si el usuario NO está logeado (siempre se mostrará el global/top_rated)
-        // entonces se construye el carrusel.
-        // Asegúrate de que los elementos sean visibles si antes estaban ocultos (por ejemplo, en un refresco de página donde hubo un error previo)
-        if (adventureCarouselDiv) {
-            adventureCarouselDiv.style.display = 'inline-block';
-        }
-        if (adventureTitleDiv) {
-            adventureTitleDiv.style.display = 'block';
-        }
+        if (adventureCarouselDiv) adventureCarouselDiv.style.display = 'inline-block';
+        if (adventureTitleDiv) adventureTitleDiv.style.display = 'block';
         buildAdventureCarousel(adventureCarouselId, gamesAdventure);
     }
-    // -----------------------------------------------------------
 
-    // --- Lógica para mostrar/ocultar el carrusel de ACCIÓN --- **AGREGADO: Todo este bloque**
     const accionCarouselDiv = document.getElementById(accionCarouselId);
     const accionTitleDiv = document.getElementById(accionTitleContainerId);
-
-    // El carrusel de ACCIÓN solo se muestra si el usuario está logeado Y hay recomendaciones
-    if (user && gamesAccion.length > 0) {
-        if (accionCarouselDiv) {
-            accionCarouselDiv.style.display = 'inline-block'; // Asegura que sea visible
-        }
-        if (accionTitleDiv) {
-            accionTitleDiv.style.display = 'block'; // Asegura que sea visible
-        }
+    // Accion carousel is primarily for logged-in users with content-based recs
+    if (accionRecType === 'content-based' && gamesAccion.length > 0) {
+        if (accionCarouselDiv) accionCarouselDiv.style.display = 'inline-block';
+        if (accionTitleDiv) accionTitleDiv.style.display = 'block';
         buildAccionCarousel(accionCarouselId, gamesAccion);
+        console.log("ACCIÓN carousel visible: Recomendaciones de contenido encontradas.");
     } else {
-        // Ocultar si no está logeado O si está logeado pero no hay recomendaciones
-        if (accionCarouselDiv) {
-            accionCarouselDiv.style.display = 'none';
-        }
-        if (accionTitleDiv) {
-            accionTitleDiv.style.display = 'none';
-        }
-        if (user && gamesAccion.length === 0) {
-            console.log("Lo mejor en ACCIÓN carousel y título ocultos: Usuario logeado sin recomendaciones de contenido.");
-        } else {
-            console.log("Lo mejor en ACCIÓN carousel y título ocultos: Usuario no logeado.");
+        if (accionCarouselDiv) accionCarouselDiv.style.display = 'none';
+        if (accionTitleDiv) accionTitleDiv.style.display = 'none';
+        if (user && accionRecType !== 'content-based') {
+             console.log("ACCIÓN carousel oculto: Logeado pero sin recomendaciones de contenido.");
+        } else if (!user) {
+             console.log("ACCIÓN carousel oculto: Usuario no logeado.");
         }
     }
-    // -----------------------------------------------------------
+    
+    // Update global recTypes based on fetched data, primarily for title updates.
+    // These are already set within each fetch function, but this re-confirms based on actual data length for logged-in users.
+    if (userId) {
+        if (newAndNoteworthyRecType !== 'cold-start' && newAndNoteworthyRecType !== 'apriori') { // If not already set by specific logic
+             newAndNoteworthyRecType = gamesNewAndNoteworthy.length > 0 ? 'apriori' : 'cold-start'; // Default logic if not set
+        }
+        // popularRecType is correctly set in fetchCarouselDataPopular
+        // adventureRecType is correctly set in fetchCarouselDataAdventure
+        // accionRecType is correctly set in fetchCarouselDataAccion
+    } else { // For non-logged in users
+        newAndNoteworthyRecType = 'general';
+        popularRecType          = 'general';
+        adventureRecType        = 'top-rated-fallback'; // Or 'general' if you prefer a different default
+        accionRecType           = 'general'; // Accion carousel not shown for non-logged in
+    }
 
-    // (Opcional) hover para dropdown
+    updateDynamicTitles();
+
     document.querySelectorAll('.nav-item.dropdown').forEach(item => {
         item.addEventListener('mouseenter', () => {
             item.classList.add('show');

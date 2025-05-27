@@ -1332,6 +1332,48 @@ def obtener_todos_los_juegos():
 
     return jsonify(juegos_filtrados)
 
+# --- Endpoint verificador de interacciones -------------------------------
+@app.route('/interacciones/<int:user_id>/check', methods=['GET'])
+def check_user_interacciones(user_id):
+    """
+    Devuelve si el usuario existe en interacciones.json y, si existe,
+    cuántas interacciones tiene.
+    ---
+    Respuesta 200:
+    {
+      "user_id": 74,
+      "exists": true,
+      "interactions_count": 0,
+      "has_interactions": false
+    }
+
+    Respuesta 404 (no está ni siquiera en el archivo):
+    {
+      "error": "El usuario con ID 74 no se encuentra en interacciones.json."
+    }
+    """
+    interacciones_data, _, _ = _load_base_json_data()
+
+    # Localiza al usuario en la lista
+    entry = next(
+        (u for u in interacciones_data.get('interacciones', []) if u.get('id') == user_id),
+        None
+    )
+
+    if not entry:
+        return (
+            jsonify({"error": f"El usuario con ID {user_id} no se encuentra en interacciones.json."}),
+            404,
+        )
+
+    interactions_count = len(entry.get('interacciones', []))
+    return jsonify({
+        "user_id": user_id,
+        "exists": True,
+        "interactions_count": interactions_count,
+        "has_interactions": interactions_count > 0
+    })
+
 
 # Punto de trada principal para ejecutar la aplicación Flask
 if __name__ == '__main__':
