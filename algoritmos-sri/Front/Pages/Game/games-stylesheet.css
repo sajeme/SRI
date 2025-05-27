@@ -1,0 +1,130 @@
+/* games-stylesheet.css */
+
+body {
+    background-color: #1b2838; /* Color de fondo oscuro similar a tus vistas */
+    color: #c7d5e0; /* Color de texto claro */
+}
+
+/* Estilos para la barra de búsqueda */
+.dark-input {
+    background-color: #2a475e;
+    border-color: #3a6e8b;
+    color: #c7d5e0;
+}
+
+.dark-input::placeholder {
+    color: #8da2b3;
+}
+
+.dark-input:focus {
+    background-color: #3a6e8b;
+    border-color: #66c0f4;
+    box-shadow: 0 0 0 0.2rem rgba(102, 192, 244, 0.25);
+}
+
+.search-btn {
+    background-color: #66c0f4;
+    border-color: #66c0f4;
+    color: #1b2838;
+    font-weight: bold;
+}
+
+.search-btn:hover {
+    background-color: #4a9ecf;
+    border-color: #4a9ecf;
+    color: white;
+}
+
+/* Estilos para el Game Card - Inspirado en tus diseños de carousel */
+.game-card {
+    background-color: #1a2a3e; /* Fondo oscuro para la tarjeta */
+    border-radius: 8px; /* Bordes redondeados suaves */
+    overflow: hidden; /* Asegura que la imagen no se salga */
+    margin-bottom: 25px; /* Espacio entre tarjetas */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Sombra para profundidad */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+    text-decoration: none; /* Eliminar subrayado de enlace */
+    color: inherit; /* Heredar color de texto */
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Asegura que todas las cards en una fila tengan la misma altura */
+}
+
+.game-card:hover {
+    transform: translateY(-5px); /* Pequeño efecto de elevación al pasar el mouse */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7); /* Sombra más pronunciada */
+}
+
+.game-card img {
+    width: 100%;
+    height: 200px; /* Altura fija para las imágenes de portada */
+    object-fit: cover; /* Recorta la imagen para cubrir el área */
+    display: block;
+}
+
+.game-card .card-content {
+    padding: 15px;
+    flex-grow: 1; /* Permite que el contenido ocupe el espacio restante */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.game-card .card-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #66c0f4; /* Color azul claro para el título */
+    margin-bottom: 8px;
+    white-space: nowrap; /* Evita que el título se rompa en varias líneas */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Añade puntos suspensivos si el título es muy largo */
+}
+
+.game-card .card-description {
+    font-size: 0.9rem;
+    color: #c7d5e0;
+    line-height: 1.4;
+    height: 60px; /* Altura fija para la descripción */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* Limita la descripción a 3 líneas */
+    -webkit-box-orient: vertical;
+    margin-bottom: 10px;
+}
+
+.game-card .card-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto; /* Empuja la información al final del card-content */
+}
+
+.game-card .card-price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #a4d257; /* Color verde para el precio, similar a Steam */
+}
+
+.game-card .card-release-date {
+    font-size: 0.85rem;
+    color: #8da2b3; /* Color más tenue para la fecha */
+}
+
+/* Botón "Cargar Más Juegos" */
+.load-more-btn {
+    background-color: #171a21;
+    border-color: #3a6e8b;
+    color: #66c0f4;
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.load-more-btn:hover {
+    background-color: #2a475e;
+    border-color: #66c0f4;
+    color: #66c0f4;
+}
