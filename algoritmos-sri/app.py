@@ -1332,6 +1332,178 @@ def obtener_todos_los_juegos():
 
     return jsonify(juegos_filtrados)
 
+# --- Endpoint verificador de interacciones -------------------------------
+@app.route('/interacciones/<int:user_id>/check', methods=['GET'])
+def check_user_interacciones(user_id):
+    """
+    Devuelve si el usuario existe en interacciones.json y, si existe,
+    cuántas interacciones tiene.
+    ---
+    Respuesta 200:
+    {
+      "user_id": 74,
+      "exists": true,
+      "interactions_count": 0,
+      "has_interactions": false
+    }
+
+    Respuesta 404 (no está ni siquiera en el archivo):
+    {
+      "error": "El usuario con ID 74 no se encuentra en interacciones.json."
+    }
+    """
+    interacciones_data, _, _ = _load_base_json_data()
+
+    # Localiza al usuario en la lista
+    entry = next(
+        (u for u in interacciones_data.get('interacciones', []) if u.get('id') == user_id),
+        None
+    )
+
+    if not entry:
+        return (
+            jsonify({"error": f"El usuario con ID {user_id} no se encuentra en interacciones.json."}),
+            404,
+        )
+
+    interactions_count = len(entry.get('interacciones', []))
+    return jsonify({
+        "user_id": user_id,
+        "exists": True,
+        "interactions_count": interactions_count,
+        "has_interactions": interactions_count > 0
+    })
+
+# En tu archivo Flask (app.py o similar)
+
+def _load_interacciones_data():
+    try:
+        with open('interacciones.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"interacciones": []} # Devuelve una estructura vacía si el archivo no existe
+    except json.JSONDecodeError:
+        return {"interacciones": []} # Devuelve vacío si hay error de parseo
+
+@app.route('/games/<string:game_id>/aggregate-interactions', methods=['GET'])
+def get_aggregate_interactions(game_id):
+    interacciones_data_root = _load_interacciones_data()
+    all_user_interactions = interacciones_data_root.get('interacciones', [])
+
+    total_likes = 0
+    total_dislikes = 0
+    ratings_sum = 0
+    rating_count = 0
+
+    for user_entry in all_user_interactions:
+        for interaction in user_entry.get('interacciones', []):
+            if str(interaction.get('id_juego')) == str(game_id):
+                # Contar likes/dislikes
+                if interaction.get('like') is True:
+                    total_likes += 1
+                elif interaction.get('like') is False:
+                    total_dislikes += 1
+                
+                # Sumar calificaciones válidas
+                calificacion = interaction.get('calificacion')
+                if calificacion is not None:
+                    try:
+                        # Asegurarse que la calificación sea un número y esté en un rango esperado (ej. 1-5)
+                        rating_value = float(calificacion)
+                        if 1 <= rating_value <= 5: # Asumiendo un rango de 1 a 5
+                            ratings_sum += rating_value
+                            rating_count += 1
+                    except ValueError:
+                        pass # Ignorar calificaciones no numéricas
+
+    average_rating = None
+    if rating_count > 0:
+        average_rating = ratings_sum / rating_count
+
+    # Si no hay interacciones para este juego, podríamos devolver 404 o simplemente ceros.
+    # Devolver ceros es más simple para el frontend en este caso.
+    # if total_likes == 0 and total_dislikes == 0 and rating_count == 0:
+    #     return jsonify({"message": f"No interaction data found for game_id {game_id}"}), 404
+        
+    return jsonify({
+        "game_id": game_id,
+        "total_likes": total_likes,
+        "total_dislikes": total_dislikes,
+        "average_rating": average_rating, # Puede ser null si rating_count es 0
+        "rating_count": rating_count
+    })
+
+def load_json_data(filepath: str) -> dict: # En Python moderno, es 'dict' no 'Dict' para type hints
+    """Carga un archivo JSON y devuelve su contenido."""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data
+    except FileNotFoundError:
+        app.logger.error(f"Error crítico en load_json_data: El archivo {filepath} no fue encontrado.")
+        raise # Re-lanza para que el endpoint maneje el HTTP 404
+    except json.JSONDecodeError:
+        app.logger.error(f"Error crítico en load_json_data: El archivo {filepath} contiene JSON inválido.")
+        raise # Re-lanza para que el endpoint maneje el HTTP 500
+    except Exception as e:
+        app.logger.error(f"Error inesperado en load_json_data cargando {filepath}: {e}")
+        raise
+
+
+# --- DEFINICIÓN GLOBAL DE LA RUTA AL ARCHIVO JSON ---
+# AJUSTA ESTA RUTA SI 'datos_juegos.json' NO ESTÁ EN LA MISMA CARPETA QUE app.py
+# Si 'datos_juegos.json' está en la misma carpeta que app.py:
+DATOS_JUEGOS_FILEPATH = 'datos_juegos.json'
+# Si 'datos_juegos.json' está en una carpeta 'data' dentro de la misma carpeta que app.py:
+# DATOS_JUEGOS_FILEPATH = 'data/datos_juegos.json'
+# Si 'datos_juegos.json' está un nivel arriba de donde está app.py:
+# DATOS_JUEGOS_FILEPATH = '../datos_juegos.json'
+
+# --- Tus Endpoints ---
+@app.route('/api/juegos', methods=['GET'])
+@cross_origin()
+def get_todos_los_juegos():
+    try:
+        # Ahora DATOS_JUEGOS_FILEPATH está definida globalmente
+        juegos_data_dict = load_json_data(DATOS_JUEGOS_FILEPATH)
+        if not isinstance(juegos_data_dict, dict):
+            app.logger.error("El formato de datos_juegos.json no es un objeto/diccionario.")
+            return jsonify({"error": "Formato de datos incorrecto en el servidor."}), 500
+        
+        juegos_lista = list(juegos_data_dict.values())
+        return jsonify(juegos_lista)
+    except FileNotFoundError:
+        # El logger en load_json_data ya registró esto, aquí respondemos al cliente.
+        # No es necesario volver a loggear DATOS_JUEGOS_FILEPATH aquí si ya lo hizo load_json_data.
+        return jsonify({"error": "Fuente de datos de juegos no disponible (archivo no encontrado)."}), 404
+    except json.JSONDecodeError:
+        return jsonify({"error": "Error al leer los datos de los juegos (formato JSON inválido)."}), 500
+    except Exception as e:
+        app.logger.error(f"Error inesperado en get_todos_los_juegos: {str(e)}") # El error original ya fue loggeado
+        return jsonify({"error": "Ocurrió un error interno inesperado al procesar los juegos."}), 500
+
+@app.route('/api/juegos/<string:appid>', methods=['GET'])
+@cross_origin()
+def get_juego_por_id(appid):
+    try:
+        juegos_data_dict = load_json_data(DATOS_JUEGOS_FILEPATH)
+        if not isinstance(juegos_data_dict, dict):
+            app.logger.error("El formato de datos_juegos.json no es un objeto/diccionario.")
+            return jsonify({"error": "Formato de datos incorrecto en el servidor."}), 500
+
+        juego = juegos_data_dict.get(appid)
+        
+        if juego:
+            return jsonify(juego)
+        else:
+            return jsonify({"error": f"Juego con appid {appid} no encontrado."}), 404
+    except FileNotFoundError:
+        return jsonify({"error": "Fuente de datos de juegos no disponible (archivo no encontrado)."}), 404
+    except json.JSONDecodeError:
+        return jsonify({"error": "Error al leer los datos del juego (formato JSON inválido)."}), 500
+    except Exception as e:
+        app.logger.error(f"Error inesperado en get_juego_por_id ({appid}): {str(e)}")
+        return jsonify({"error": "Ocurrió un error interno inesperado al procesar el juego."}), 500
 
 # Punto de trada principal para ejecutar la aplicación Flask
 if __name__ == '__main__':

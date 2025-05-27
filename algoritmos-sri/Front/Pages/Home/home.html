@@ -9,9 +9,7 @@
         <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
         <script src="main-js.js"></script>
-
-
-        <nav class="d-flex navbar navbar-expand-md darkNav navbar-dark">
+        <title>Mi Tienda de Juegos</title> <nav class="d-flex navbar navbar-expand-md darkNav navbar-dark">
             <span class="d-md-none d-block" style="cursor:pointer" onclick="openNav()"><img width="30px" height="30px" src="https://icon-library.com/images/hamburger-menu-icon-png-white/hamburger-menu-icon-png-white-10.jpg"></span>
 
             <div id="myNav" class="overlay">
@@ -26,26 +24,25 @@
 
             <div class="collapse navbar-collapse" id="collapsibleNavbar">
               <ul class="navbar-nav pl-4 pt-1">
-                  <li class="nav-item dropdown">
-                      <a class="nav-link" href="#" data-toggle="dropdown">
-                        Tienda
-                      </a>
-                      <div style="background-color: #171a21;" class="dropdown-menu">
-                        <a class="menuItem" href="../Home/home.html">Inicio</a>
-                      </div>
-                    </li>
-                  <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="cuentaMenu" data-toggle="dropdown"
-                        aria-haspopup="true"
-                        aria-expanded="false">Cuenta</a>
-                    <div style="background-color: #171a21;" class="dropdown-menu"  id="cuentaOpciones" aria-labelledby="cuentaMenu">
-
+                
+                    <li class="nav-item dropdown">
+                    <a class="nav-link" href="#" data-toggle="dropdown">
+                      Tienda
+                    </a>
+                    <div style="background-color: #171a21;" class="dropdown-menu">
+                      <a class="menuItem" href="../Game/games.html">Tienda</a>
                     </div>
                   </li>
+                    </li>
+                    <li class="nav-item dropdown">
+                      <a class="nav-link dropdown-toggle" href="#" id="cuentaMenu" data-toggle="dropdown"
+                          aria-haspopup="true"
+                          aria-expanded="false">Cuenta</a>
+                      <div style="background-color: #171a21;" class="dropdown-menu"  id="cuentaOpciones" aria-labelledby="cuentaMenu">
 
-                  <li class="nav-item">
-                    <a class="nav-link" href="../About/about.html">Sobre Nosotros</a>
-                  </li>
+                      </div>
+                    </li>
+
                 </ul>
             </div>
         </div>
@@ -60,57 +57,9 @@
                 <source src="../../ImageData/abstractbluebg_720.mp4" type="video/mp4">
               </video>
 
-            <div class="d-none d-md-block navbarCaption mx-auto">
-                <nav class="navbar navbar-expand-sm navbarBg">
-
-                    <ul class="navbar-nav" >
-                        <li class="nav-item dropdown">
-                            <a class="nav-link navBarItem" href="#" data-toggle="dropdown">
-                            Your Store
-                            </a>
-                            <div style="background-color: #3786c6;" class="dropdown-menu">
-                              <a class="menuItem" href="#">Home</a>
-                              <a class="menuItem" href="#">Community Recommendation</a>
-                              <a class="menuItem" href="#">Recently Viewed</a>
-                              <a class="menuItem" href="#">Steam Curators</a>
-                            </div>
-                          </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link navBarItem" href="#">New and Noteworthy</a>
-                            <div style="background-color: #3786c6;" class="dropdown-menu">
-                              <a class="menuItem" href="#">Steam Replay 2022</a>
-                              <a class="menuItem" href="#">Top Sellers</a>
-                              <a class="menuItem" href="#">Most Played</a>
-                              <a class="menuItem" href="#">Popular and Upcoming</a>
-                          </li>
-
-                        <li class="nav-item dropdown">
-                          <a class="nav-link navBarItem" href="#">Categories</a>
-
-                          <div style="background-color: #3786c6;" class="dropdown-menu">
-                            <a class="menuItem navBarItem" href="#">Action</a>
-                            <a class="menuItem navBarItem" href="#">Roleplaying</a>
-                            <a class="menuItem navBarItem" href="#">Strategy</a>
-                            <a class="menuItem navBarItem" href="#">Adventure</a>
-                            <a class="menuItem navBarItem" href="#">Sports</a>
-                          </div>
-                        </li>
-
-                        <li class="nav-item">
-                          <a class="nav-link navBarItem" href="#">Labs</a>
-                        </li>
-                      </ul>
-
-                      <form class="form-inline ml-auto" action="#">
-                        <input class="form-control" type="text" placeholder="Search">
-                        <button style="background-color: #8080ef9c;" class="btn" type="submit"><img width="15px" height="15px" src="https://img.icons8.com/material-rounded/256/search.png"></button>
-                      </form>
-                  </nav>
-            </div>
-
             <div
              class="caption">
-                <h5>Feb.06 - Feb.13 @10AM Pacific</h5>
+                <h5>May.26 - Jun.6 @10AM Pacific</h5>
                 <img style="width: 30%; height: 25%;" src="../../ImageData/NEX.png">
 
             </div>
@@ -119,21 +68,25 @@
         <div id="main" style="position: relative;" class="container-fluid">
           <div class="sidebar d-none d-xl-block" style="padding-right: 10px;">
           </div>
-          <div style="margin-left: 17%; margin-top: 3%">
-              <h2 class="midTitleFont">Lo Nuevo de 2025</h2>
-            </div>
-
+          <div id="secciones">
+          <div id="newAndNoteworthyTitleContainer" style="margin-left: 17%; margin-top: 3%">
+            <h2 id="newAndNoteworthyDynamicTitle" class="midTitleFont">
+              Lo Nuevo de 2025
+            </h2>
+          </div>
 
         <div style="display:inline-block;width: 65%; height: 50%;position: relative; margin-top: 2%; margin-left: 17%;"
-         id="demo" class="carousel slide carousel-fade" data-ride="carousel">
+          id="demo" class="carousel slide carousel-fade" data-ride="carousel">
             </div>
 
         <div style="margin-left: 17%; margin-top: 3%">
-          <h2 class="midTitleFont">Juegos más populares</h2>
-        </div>
+            <h2 id="popularDynamicTitle" class="midTitleFont">
+              Juegos más populares
+            </h2>
+          </div>
 
         <div style="display:inline-block;width: 65%; height: fit-content;position: relative; margin-top: 2%; margin-left: 17%;"
-         id="demo2" class="carousel slide" data-ride="carousel">
+          id="demo2" class="carousel slide" data-ride="carousel">
           <ul style="display: none;" class="carousel-indicators"></ul>
           <div class="carousel-inner"></div>
 
@@ -145,9 +98,11 @@
           </a>
         </div>
 
-            <div id="accionTitleContainer" style="margin-left: 17%; margin-top: 3%">
-              <h2 class="midTitleFont">Lo mejor en ACCIÓN</h2>
-            </div>
+              <div id="accionTitleContainer" style="margin-left: 17%; margin-top: 3%">
+                <h2 id="accionDynamicTitle" class="midTitleFont">
+                  Lo mejor en ACCIÓN
+                </h2>
+              </div>
             <div id="demoAccion" class="carousel slide" data-ride="carousel" style="display:inline-block;width: 65%; margin-left: 17%; margin-top: 2%;">
               <div class="carousel-inner">
                 </div>
@@ -155,15 +110,18 @@
               <a class="carousel-control-next" href="#demoAccion" data-slide="next"><span class="carousel-control-next-icon"></span></a>
             </div>
 
-            <div id="adventureTitleContainer" style="margin-left: 17%; margin-top: 5%">
-              <h2 class="midTitleFont">Explora la AVENTURA</h2>
-            </div>
+              <!-- Explora la AVENTURA -->
+              <div id="adventureTitleContainer" style="margin-left: 17%; margin-top: 5%">
+                <h2 id="adventureDynamicTitle" class="midTitleFont">
+                  Explora la AVENTURA
+                </h2>
+              </div>
             <div id="demoAventura" class="carousel slide" data-ride="carousel" style="display:inline-block;width: 65%; margin-left: 17%; margin-top: 2%;">
               <div class="carousel-inner"></div>
                 <a class="carousel-control-prev" href="#demoAventura" data-slide="prev"><span class="carousel-control-prev-icon"></span></a>
                 <a class="carousel-control-next" href="#demoAventura" data-slide="next"><span class="carousel-control-next-icon"></span></a>
             </div>
-
+        </div>
 
     </div>
     </body>

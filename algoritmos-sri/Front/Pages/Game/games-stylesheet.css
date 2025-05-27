@@ -1,130 +1,615 @@
 /* games-stylesheet.css */
 
 body {
-    background-color: #1b2838; /* Color de fondo oscuro similar a tus vistas */
+    background-color: #1b2838; /* Color de fondo oscuro */
     color: #c7d5e0; /* Color de texto claro */
+    font-family: 'Motiva Sans', Sans-serif, Arial, Helvetica; /* Fuente similar a Steam */
 }
 
-/* Estilos para la barra de búsqueda */
+/* Estilos para la barra de búsqueda (ya los tenías y están bien) */
 .dark-input {
-    background-color: #2a475e;
+    background-color: #2a475e; /* Azul oscuro Steam */
     border-color: #3a6e8b;
     color: #c7d5e0;
 }
-
-.dark-input::placeholder {
-    color: #8da2b3;
-}
-
+.dark-input::placeholder { color: #8da2b3; }
 .dark-input:focus {
     background-color: #3a6e8b;
-    border-color: #66c0f4;
+    border-color: #66c0f4; /* Azul claro Steam */
     box-shadow: 0 0 0 0.2rem rgba(102, 192, 244, 0.25);
+    color: #ffffff;
 }
-
 .search-btn {
     background-color: #66c0f4;
     border-color: #66c0f4;
-    color: #1b2838;
+    color: #1b2838; /* Texto oscuro para contraste */
     font-weight: bold;
 }
-
 .search-btn:hover {
-    background-color: #4a9ecf;
+    background-color: #4a9ecf; /* Un azul más oscuro al pasar el mouse */
     border-color: #4a9ecf;
     color: white;
 }
 
-/* Estilos para el Game Card - Inspirado en tus diseños de carousel */
+/* Estilos para el Game Card */
 .game-card {
-    background-color: #1a2a3e; /* Fondo oscuro para la tarjeta */
-    border-radius: 8px; /* Bordes redondeados suaves */
-    overflow: hidden; /* Asegura que la imagen no se salga */
-    margin-bottom: 25px; /* Espacio entre tarjetas */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Sombra para profundidad */
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    cursor: pointer;
-    text-decoration: none; /* Eliminar subrayado de enlace */
-    color: inherit; /* Heredar color de texto */
-    display: flex;
-    flex-direction: column;
-    height: 100%; /* Asegura que todas las cards en una fila tengan la misma altura */
+    background-color: #2a3f58; /* Fondo de tarjeta un poco más claro que el body */
+    border: 1px solid #1a2430; /* Borde sutil */
+    border-radius: 4px; /* Bordes redondeados */
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    color: #c7d5e0;
+    display: flex; /* Necesario para h-100 y flex-column en card-body */
+    flex-direction: column; /* Para que el card-body se expanda */
 }
 
 .game-card:hover {
-    transform: translateY(-5px); /* Pequeño efecto de elevación al pasar el mouse */
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7); /* Sombra más pronunciada */
+    transform: translateY(-5px); /* Ligero efecto de elevación */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
 }
 
-.game-card img {
+.game-card .card-img-top {
     width: 100%;
-    height: 200px; /* Altura fija para las imágenes de portada */
-    object-fit: cover; /* Recorta la imagen para cubrir el área */
-    display: block;
+    height: 160px; /* Altura fija para la imagen, ajusta según tus imágenes */
+    object-fit: cover; /* Asegura que la imagen cubra el área sin distorsionarse */
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
 }
 
-.game-card .card-content {
-    padding: 15px;
-    flex-grow: 1; /* Permite que el contenido ocupe el espacio restante */
+.game-card .card-body {
+    padding: 1rem;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    flex-grow: 1; /* Permite que el card-body ocupe el espacio restante */
 }
 
 .game-card .card-title {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     font-weight: bold;
-    color: #66c0f4; /* Color azul claro para el título */
-    margin-bottom: 8px;
-    white-space: nowrap; /* Evita que el título se rompa en varias líneas */
-    overflow: hidden;
-    text-overflow: ellipsis; /* Añade puntos suspensivos si el título es muy largo */
+    color: #66c0f4; /* Título en azul claro */
+    margin-bottom: 0.5rem;
+    /* Para truncar títulos largos si es necesario (JavaScript ya lo hace) */
+    /* white-space: nowrap; overflow: hidden; text-overflow: ellipsis; */
+    height: 48px; /* Espacio para aprox 2 líneas */
+    overflow: hidden; /* Oculta el texto que no quepa */
+}
+.game-card .card-title a {
+    color: inherit;
+    text-decoration: none;
+}
+.game-card .card-title a:hover {
+    text-decoration: underline;
 }
 
+
 .game-card .card-description {
-    font-size: 0.9rem;
-    color: #c7d5e0;
+    font-size: 0.85rem;
+    color: #acb2b8; /* Un gris un poco más claro para la descripción */
     line-height: 1.4;
-    height: 60px; /* Altura fija para la descripción */
+    height: 60px; /* Altura fija para descripción (aprox 3 líneas) */
     overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3; /* Limita la descripción a 3 líneas */
+    /* text-overflow: ellipsis; No funciona bien con multilínea sin -webkit-line-clamp */
+    display: -webkit-box; /* Para truncado multilínea en WebKit */
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
-    margin-bottom: 10px;
+    margin-bottom: 0.75rem;
 }
 
 .game-card .card-info {
+    margin-top: auto; /* Empuja esto al fondo del card-body */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: auto; /* Empuja la información al final del card-content */
+    font-size: 0.9rem;
 }
 
 .game-card .card-price {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: bold;
-    color: #a4d257; /* Color verde para el precio, similar a Steam */
+    color: #a4d257; /* Verde Steam para el precio */
 }
 
 .game-card .card-release-date {
-    font-size: 0.85rem;
-    color: #8da2b3; /* Color más tenue para la fecha */
+    color: #8f98a0; /* Gris para la fecha */
 }
 
-/* Botón "Cargar Más Juegos" */
-.load-more-btn {
-    background-color: #171a21;
-    border-color: #3a6e8b;
-    color: #66c0f4;
-    padding: 10px 20px;
-    font-size: 1.1rem;
-    border-radius: 5px;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-.load-more-btn:hover {
-    background-color: #2a475e;
+.game-card .view-details-btn {
+    background-color: #66c0f4;
     border-color: #66c0f4;
-    color: #66c0f4;
+    color: #1e2d3b;
+    font-weight: 500;
+    padding: 0.375rem 0.75rem; /* Ajuste de padding */
+}
+.game-card .view-details-btn:hover {
+    background-color: #5aadc8;
+    border-color: #5aadc8;
+    color: #ffffff;
+}
+
+.load-more-btn {
+    background-color: #66c0f4;
+    border-color: #66c0f4;
+    color: #1b2838;
+    font-weight: bold;
+    padding: 10px 25px;
+}
+.load-more-btn:hover {
+    background-color: #4a9ecf;
+    border-color: #4a9ecf;
+    color: white;
+}
+.darkNav{
+    background-color: #171a21;
+}
+.logoSmall{
+    width: 156.63px;
+    height: 36px;
+}
+.logoBig{
+    width: 65px;
+    height: auto;
+}
+
+a {
+    text-decoration: none;
+}
+
+a :hover{
+    transition: 0.3s;
+    text-decoration: none;
+    color: whitesmoke;
+}
+
+
+.menuItem{
+    display: block;
+    text-decoration: none;
+    padding: 7px;
+    padding-left: 15px;
+    color: #cccdce;
+}
+
+.menuItem:hover{
+    color: whitesmoke;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+@media screen and (min-width: 950px){
+.dropdown .dropdown-menu{
+    display: block; 
+    opacity:0;
+    -webkit-transition: all 150ms ease-in;
+    -moz-transition: all 150ms ease-in;
+    -ms-transition: all 150ms ease-in;
+    -o-transition: all 150ms ease-in;
+    transition: all 150ms ease-in;
+ }
+}
+.navbar-nav li:hover>.dropdown-menu {
+    display: block;
+    margin-top: 0px;
+    opacity: 1;
+    text-decoration: none;
+}
+
+
+.video-container {
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+.video-container video {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  object-fit: cover;
+}
+
+.video-container .caption{
+  position: relative;
+  text-align: center;
+  padding: 10px;
+  padding-top: 30px;
+}
+
+.navbarCaption{
+    position: relative;
+    padding: 3px;
+    width: 800px;
+}
+.navbarBg{
+    margin-top: 30px;
+    background-image: linear-gradient(to right, #3786c6 , #223e87);
+    height: 45px;
+}
+
+.navBarItem{
+    color: whitesmoke;
+    text-decoration: none;
+}
+
+.navBarItem:hover{
+    background-color: whitesmoke;
+    opacity: 100%;
+}
+
+@media screen and (max-width: 992px) {
+    
+}
+
+
+.overlay {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 25;
+    top: 0;
+    left: 0;
+    background-color: #171a21;
+    border-top-right-radius: 30px;
+    border-bottom-right-radius: 30px;
+    overflow-x: hidden;
+    transition: 0.5s;
+  }
+  
+  .overlay-content {
+    position: relative;
+    top: 3%;
+    width: 100%;
+    text-align: left;
+    margin-top: 30px;
+  }
+  
+  .overlay a {
+    padding: 8px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    
+    display: block;
+    transition: 0.3s;
+  }
+  
+  .overlay a:hover, .overlay a:focus {
+    color: #f1f1f1;
+    text-decoration: none;
+  }
+  
+  .overlay .closebtn {
+    position: absolute;
+    top: 0px;
+    left: 6px;
+    padding: 10px;
+    padding-top: 3px;
+    font-size: 30px;
+  }
+  
+  @media screen and (max-height: 450px) {
+    .overlay a {font-size: 20px}
+    .overlay .closebtn {
+    font-size: 40px;
+    top: 15px;
+    right: 35px;
+    }
+  }
+
+  .carousel-inner img {
+    width: 100%;
+    height: 100%;
+  }
+  .sidebar {
+    position: absolute;
+    padding-top: 20px;
+    width: 210px;
+    height: 1000px;
+    float: left;
+    margin-left: 1%;
+    color: whitesmoke;
+}
+
+a :hover> .sidebar{
+    text-decoration: none;
+    color: #ccdecc;
+}
+
+.smallCarouselImg{
+    display: inline-block; 
+    width: 33%;
+}
+
+.carousel-caption {
+    position: absolute;
+    right: 10px;
+    bottom: 20px;
+    left: 10px;
+    z-index: 10;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    color: #fff;
+    text-align: center;
+}
+
+.midTitleFont{
+    color: whitesmoke;
+}
+
+#img1{
+    position: relative;
+}
+
+.carouselItem {
+    background-repeat: no-repeat;
+    position: relative;
+    float: left;
+    width: 33%;
+    background-size:cover;
+  }
+  
+.carouselImg {
+    visibility: hidden;
+  }
+
+.carouselCaption{
+    background-color: rgba(55, 134, 198, 0.5);
+    position: absolute; 
+    bottom: 0.1%; 
+    left: 0; 
+    width: 100%; 
+    height: 30%; 
+    text-align: left;
+    padding: 10px;
+    color: whitesmoke;
+    font-weight: 600;
+}
+
+@media screen and (max-width: 860px) {
+    .card-footer{
+        display: none;
+    }
+    #game-highlight-div{
+        height: 28% !important;
+    }
+}
+
+.smallFont{
+    font-size: 15px;
+    color: #bbc9d4;
+    font-weight: 400;
+}
+.tinyFont{
+    font-size: 12px;
+    color: #50616d;
+    font-weight: 500;
+}
+.dimFont{
+    font-size: 15px;
+    color: #50616d;
+    font-weight: 500;
+}
+
+.carousel-indicators li{
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 100px !important;
+    height: 56px !important;
+    position: relative;
+    margin: 5px;           
+}
+@media screen and (max-width: 768px) {
+    .vid-carousel{
+        float: none !important;
+        width: 100% !important;
+    }
+    #game-highlight{
+        width: 100% !important;
+    }
+    #game-highlight-div{
+        margin: 0px !important;
+        width: 100% !important;
+    }
+    #game-price{
+        width: 100% !important;
+        padding-top: 1px !important;
+    }
+    
+
+    #price{
+        width: 50% !important; 
+    }
+    .btn{
+        height: 25px !important;
+    }
+    .btn span{
+        font-size: 13px;
+    }
+    #sysreq{
+        width: 100% !important;
+        margin-left: 5px !important;
+    }
+
+}
+
+.dropdown-menu a {
+  color: white !important;
+}
+
+.dropdown-menu a:hover {
+  background-color: #2a2a2a !important;
+  color: #0df !important;
+}
+
+/* Styles for rating stars */
+.rating-section .star {
+    font-size: 20px;
+    color: #50616d; /* Dim color for unselected stars */
+    cursor: pointer;
+}
+
+.rating-section .star.selected {
+    color: gold; /* Gold color for selected stars */
+}
+
+/* Styles for like/dislike icons */
+.like-section .like-icon,
+.like-section .dislike-icon {
+    opacity: 0.5; /* Dim by default */
+}
+
+.like-section .like-icon.selected,
+.like-section .dislike-icon.selected {
+    opacity: 1; /* Full opacity when selected */
+}
+
+
+/* product-stylesheet.css */
+
+/* ... (tus otros estilos) ... */
+
+.midTitleFont { /* Estilo para los títulos de sección si no lo tienes definido */
+    font-family: 'Motiva Sans', Sans-serif; /* O la fuente que uses */
+    font-weight: 300;
+    color: #c7d5e0; /* Un color claro típico de Steam */
+}
+
+
+/* ESTILOS PARA TARJETAS DE RECOMENDACIÓN (AVENTURA CARD) */
+.aventura-card-wrapper { /* Contenedor para cada tarjeta en el carrusel */
+    padding: 0 10px; /* Espacio entre tarjetas */
+}
+
+.aventura-card {
+  position: relative;
+  border-radius: 5px; /* Bordes más sutiles */
+  overflow: hidden;
+  transition: transform .3s ease;
+  background-color: #1a2f44; /* Un fondo para la tarjeta */
+  display: block; /* Para que el <a> ocupe el espacio */
+  text-decoration: none; /* Quitar subrayado de enlaces */
+  color: inherit; /* Heredar color de texto */
+  height: 280px; /* Altura fija para consistencia */
+  display: flex;
+  flex-direction: column;
+}
+
+.aventura-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.aventura-card-img-top {
+    width: 100%;
+    height: 150px; /* Altura fija para la imagen */
+    object-fit: cover; /* Asegura que la imagen cubra el área sin distorsionarse */
+}
+
+/* ribbon */
+.aventura-card .card-ribbon {
+  position: absolute;
+  top: 15px; /* Ajustado */
+  left: -35px; /* Ajustado */
+  width: 150px; /* Ajustado */
+  height: 30px;  /* Ajustado */
+  background: #3786c6;
+  color: white;
+  text-align: center;
+  line-height: 30px; /* Ajustado */
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* Sombra más suave */
+  font-size: 0.8rem; /* Ajustado */
+  z-index: 1;
+}
+
+
+/* hover overlay - Simplificado para mostrar título y una breve info */
+.aventura-card .card-body-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 60%, transparent 100%);
+  color: white;
+  padding: 10px;
+  opacity: 1; /* Siempre visible para info básica */
+  transition: opacity .3s ease;
+  height: auto; /* Ajustar altura al contenido */
+}
+
+.aventura-card:hover .card-body-overlay {
+  /* Podrías aumentar la opacidad o cambiar algo al hacer hover si quieres un efecto extra */
+}
+
+.aventura-card .card-title-overlay {
+  margin: 0 0 5px 0;
+  font-size: 1rem; /* Ajustado */
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Para nombres largos */
+}
+
+.aventura-card .card-desc-overlay { /* No lo usaremos directamente con la data actual, pero está en el CSS */
+  margin-top: 5px;
+  font-size: .8rem; /* Ajustado */
+  height: 3.6em; /* Limitar a ~3 líneas */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Para el contenido de la tarjeta que no es overlay (siempre visible) */
+.aventura-card-content {
+    padding: 10px;
+    background-color: #0d151d; /* Color de fondo del cuerpo de la tarjeta */
+    flex-grow: 1; /* Para que ocupe el espacio restante */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Empuja el precio hacia abajo */
+}
+
+.aventura-card-title {
+    color: #c7d5e0;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.aventura-card-price {
+    color: #acdbf5;
+    font-size: 0.9rem;
+    margin-top: auto; /* Empuja el precio al final del contenedor flexible */
+    text-align: right;
+}
+
+/* Ajustes para el carrusel de recomendaciones */
+#similarGamesCarousel .carousel-item .row {
+    justify-content: center; /* Centrar las tarjetas si son menos de 3 */
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  /* ❌ quita el position: relative; */
+  position: absolute;      /* volvemos a absolute para que top/bottom funcionen */
+  top: 0;                  /* ocupe desde arriba */
+  bottom: 0;               /* hasta abajo */
+  width: 60px;             /* ancho fijo de tu cuadro rojo */
+  display: flex;           
+  align-items: center;     /* centra verticalmente la flecha */
+  justify-content: center; /* centra horizontalmente la flecha dentro del cuadro */
+  background-color: rgba(27, 28, 29, 0.2); /* tu test del rojo */
+}
+
+/* opcional si necesitas reposicionar los controles en los extremos */
+.carousel-control-prev { left: 0; }
+.carousel-control-next { right: 0; }
+
+/* Add this if similarGamesCarouselInner doesn't naturally take on the card height */
+#similarGamesCarouselInner {
+    min-height: 280px; /* Ensure it's at least the height of your cards */
+    display: flex; /* Make it a flex container to align items if needed */
+    align-items: center; /* Vertically align items within the inner */
 }

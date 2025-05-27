@@ -321,3 +321,156 @@ a :hover> .sidebar{
 .like-section .dislike-icon.selected {
     opacity: 1; /* Full opacity when selected */
 }
+
+
+/* product-stylesheet.css */
+
+/* ... (tus otros estilos) ... */
+
+.midTitleFont { /* Estilo para los títulos de sección si no lo tienes definido */
+    font-family: 'Motiva Sans', Sans-serif; /* O la fuente que uses */
+    font-weight: 300;
+    color: #c7d5e0; /* Un color claro típico de Steam */
+}
+
+
+/* ESTILOS PARA TARJETAS DE RECOMENDACIÓN (AVENTURA CARD) */
+.aventura-card-wrapper { /* Contenedor para cada tarjeta en el carrusel */
+    padding: 0 10px; /* Espacio entre tarjetas */
+}
+
+.aventura-card {
+  position: relative;
+  border-radius: 5px; /* Bordes más sutiles */
+  overflow: hidden;
+  transition: transform .3s ease;
+  background-color: #1a2f44; /* Un fondo para la tarjeta */
+  display: block; /* Para que el <a> ocupe el espacio */
+  text-decoration: none; /* Quitar subrayado de enlaces */
+  color: inherit; /* Heredar color de texto */
+  height: 280px; /* Altura fija para consistencia */
+  display: flex;
+  flex-direction: column;
+}
+
+.aventura-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.aventura-card-img-top {
+    width: 100%;
+    height: 150px; /* Altura fija para la imagen */
+    object-fit: cover; /* Asegura que la imagen cubra el área sin distorsionarse */
+}
+
+/* ribbon */
+.aventura-card .card-ribbon {
+  position: absolute;
+  top: 15px; /* Ajustado */
+  left: -35px; /* Ajustado */
+  width: 150px; /* Ajustado */
+  height: 30px;  /* Ajustado */
+  background: #3786c6;
+  color: white;
+  text-align: center;
+  line-height: 30px; /* Ajustado */
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* Sombra más suave */
+  font-size: 0.8rem; /* Ajustado */
+  z-index: 1;
+}
+
+
+/* hover overlay - Simplificado para mostrar título y una breve info */
+.aventura-card .card-body-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 60%, transparent 100%);
+  color: white;
+  padding: 10px;
+  opacity: 1; /* Siempre visible para info básica */
+  transition: opacity .3s ease;
+  height: auto; /* Ajustar altura al contenido */
+}
+
+.aventura-card:hover .card-body-overlay {
+  /* Podrías aumentar la opacidad o cambiar algo al hacer hover si quieres un efecto extra */
+}
+
+.aventura-card .card-title-overlay {
+  margin: 0 0 5px 0;
+  font-size: 1rem; /* Ajustado */
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Para nombres largos */
+}
+
+.aventura-card .card-desc-overlay { /* No lo usaremos directamente con la data actual, pero está en el CSS */
+  margin-top: 5px;
+  font-size: .8rem; /* Ajustado */
+  height: 3.6em; /* Limitar a ~3 líneas */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Para el contenido de la tarjeta que no es overlay (siempre visible) */
+.aventura-card-content {
+    padding: 10px;
+    background-color: #0d151d; /* Color de fondo del cuerpo de la tarjeta */
+    flex-grow: 1; /* Para que ocupe el espacio restante */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Empuja el precio hacia abajo */
+}
+
+.aventura-card-title {
+    color: #c7d5e0;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.aventura-card-price {
+    color: #acdbf5;
+    font-size: 0.9rem;
+    margin-top: auto; /* Empuja el precio al final del contenedor flexible */
+    text-align: right;
+}
+
+/* Ajustes para el carrusel de recomendaciones */
+#similarGamesCarousel .carousel-item .row {
+    justify-content: center; /* Centrar las tarjetas si son menos de 3 */
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  /* ❌ quita el position: relative; */
+  position: absolute;      /* volvemos a absolute para que top/bottom funcionen */
+  top: 0;                  /* ocupe desde arriba */
+  bottom: 0;               /* hasta abajo */
+  width: 60px;             /* ancho fijo de tu cuadro rojo */
+  display: flex;           
+  align-items: center;     /* centra verticalmente la flecha */
+  justify-content: center; /* centra horizontalmente la flecha dentro del cuadro */
+  background-color: rgba(27, 28, 29, 0.2); /* tu test del rojo */
+}
+
+/* opcional si necesitas reposicionar los controles en los extremos */
+.carousel-control-prev { left: 0; }
+.carousel-control-next { right: 0; }
+
+/* Add this if similarGamesCarouselInner doesn't naturally take on the card height */
+#similarGamesCarouselInner {
+    min-height: 280px; /* Ensure it's at least the height of your cards */
+    display: flex; /* Make it a flex container to align items if needed */
+    align-items: center; /* Vertically align items within the inner */
+}

@@ -465,3 +465,25 @@ a :hover> .sidebar{
     object-fit: contain; /* **CLAVE:** Escala la imagen para que quepa completamente dentro del contenedor, sin recortes. */
     display: block;
 }
+
+/* Chip fijo que explica el porqué de la recomendación  */
+.rec-reason {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 6px;
+  background: rgba(0,0,0,.75);
+  color: #0df;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: 4px;
+  z-index: 3;
+  pointer-events: none;      /* no estorba el click */
+  backdrop-filter: blur(2px);
+  transition: transform .25s;
+}
+
+/* Animación “sale” cuando el usuario pasa el ratón */
+.carouselItem:hover .rec-reason {
+  transform: translateY(-3px);
+}

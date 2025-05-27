@@ -373,15 +373,20 @@ function displayGameDetails(gameData) {
     if (submitRatingBtn) {
         submitRatingBtn.addEventListener('click', async () => {
             if (user && user.id) {
-                if (selectedRating > 0 && selectedLike !== null) {
+
+                if (selectedRating > 0) {
+                    // Enviar la calificación. selectedLike puede ser true, false, o null.
+                    // La función sendGameInteraction ya maneja el caso de selectedLike siendo null.
                     const success = await sendGameInteraction(user.id, gameId, selectedRating, selectedLike);
                     if (success) {
-                        alert('¡Gracias por tu calificación y tu opinión!');
-                        // Opcional: Deshabilitar la sección de calificación después de enviar
-                        // ratingSection.style.display = 'none';
+                        if (selectedLike !== null) {
+                            alert('¡Gracias por tu calificación y tu opinión!');
+                        } else {
+                            alert('¡Gracias por tu calificación!');
+                        }
                     }
                 } else {
-                    alert('Por favor, selecciona una calificación por estrellas y elige "Me gusta" o "No me gusta".');
+                    alert('Por favor, selecciona una calificación por estrellas.');
                 }
             } else {
                 alert('Debes iniciar sesión para calificar el juego.');
@@ -390,7 +395,224 @@ function displayGameDetails(gameData) {
         });
     }
 }
+async function fetchAndDisplayAggregateInteractions(gameId) {
+    const section = document.getElementById('aggregateInteractionsSection');
+    const totalLikesEl = document.getElementById('totalLikes');
+    const totalDislikesEl = document.getElementById('totalDislikes');
+    const averageRatingEl = document.getElementById('averageRating');
+    const ratingCountEl = document.getElementById('ratingCount');
 
+    // Asegurarse de que todos los elementos existan
+    if (!section || !totalLikesEl || !totalDislikesEl || !averageRatingEl || !ratingCountEl) {
+        console.warn("Elementos para mostrar interacciones agregadas no encontrados en el DOM.");
+        return;
+    }
+
+    try {
+        // Debes crear este endpoint en tu backend (Flask)
+        // Debería leer interacciones.json, calcular los agregados para gameId y devolverlos
+        const response = await fetch(`http://localhost:5000/games/${gameId}/aggregate-interactions`);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                console.log(`No hay datos de interacción agregados para el juego ${gameId}. Se mostrarán valores por defecto.`);
+                // Mostrar valores por defecto ya que no hay datos, pero mostrar la sección
+                totalLikesEl.textContent = '0';
+                totalDislikesEl.textContent = '0';
+                averageRatingEl.textContent = 'N/A';
+                ratingCountEl.textContent = '0';
+            } else {
+                // Otro error HTTP
+                console.error(`Error HTTP al obtener interacciones agregadas: ${response.status}`);
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+        } else {
+            const data = await response.json();
+            console.log("Datos de interacción agregados recibidos:", data);
+
+            totalLikesEl.textContent = data.total_likes !== undefined ? data.total_likes.toLocaleString() : '0';
+            totalDislikesEl.textContent = data.total_dislikes !== undefined ? data.total_dislikes.toLocaleString() : '0';
+
+            if (data.rating_count > 0 && data.average_rating !== undefined && data.average_rating !== null) {
+                averageRatingEl.textContent = `${parseFloat(data.average_rating).toFixed(1)} estrellas`; // Ej: "4.5 estrellas"
+                ratingCountEl.textContent = data.rating_count.toLocaleString();
+            } else {
+                averageRatingEl.textContent = 'N/A';
+                ratingCountEl.textContent = '0';
+            }
+        }
+        section.style.display = 'block'; // Hacer visible la sección
+    } catch (error) {
+        console.error("Error al obtener o mostrar las interacciones agregadas del juego:", error);
+        // Opcional: Mostrar un mensaje de error en la UI si la sección es crítica
+        // Por ahora, simplemente no se mostrarán datos actualizados o se quedarán los defaults.
+        // Y la sección podría quedarse oculta o mostrar "Error al cargar".
+        // Para mantener la consistencia con el caso 404, mostramos defaults y la sección:
+        totalLikesEl.textContent = '-';
+        totalDislikesEl.textContent = '-';
+        averageRatingEl.textContent = 'Error';
+        ratingCountEl.textContent = '-';
+        section.style.display = 'block';
+    }
+}
+async function fetchAndDisplaySimilarGames(gameId) {
+    const similarGamesContainer = document.getElementById('similarGamesCarouselInner');
+    const similarGamesSection = document.getElementById('similarGamesCarousel'); // El contenedor del carrusel
+    const similarGamesTitleContainer = document.getElementById('similarGamesTitleContainer');
+
+
+    if (!similarGamesContainer || !similarGamesSection || !similarGamesTitleContainer) {
+        console.warn("Elementos para recomendaciones no encontrados en el DOM.");
+        return;
+    }
+
+    // Ocultar la sección de recomendaciones y el título al inicio
+    similarGamesSection.style.display = 'none';
+    similarGamesTitleContainer.style.display = 'none';
+
+    console.log(`Buscando recomendaciones para el juego con ID: ${gameId}`);
+    try {
+        const response = await fetch(`http://localhost:5000/recommendations/collaborative/similar-games/${gameId}`);
+        if (!response.ok) {
+            // Si el error es 404 (no hay similares), no lo mostramos como un error de servidor
+            if (response.status === 404) {
+                const errorData = await response.json();
+                console.log(errorData.message || "No se encontraron juegos similares.");
+                similarGamesContainer.innerHTML = '<p class="text-light text-center p-3">No hay recomendaciones similares disponibles para este juego.</p>';
+                // Mostrar el título y la sección incluso si no hay juegos, para dar el mensaje.
+                similarGamesTitleContainer.style.display = 'block';
+                similarGamesSection.style.display = 'block'; 
+                // Ocultar controles del carrusel si no hay items
+                const prevControl = similarGamesSection.querySelector('.carousel-control-prev');
+                const nextControl = similarGamesSection.querySelector('.carousel-control-next');
+                if (prevControl) prevControl.style.display = 'none';
+                if (nextControl) nextControl.style.display = 'none';
+                return;
+            }
+            throw new Error(`Error HTTP: ${response.status} - ${await response.text()}`);
+        }
+        const data = await response.json();
+
+        if (data.similar_games && data.similar_games.length > 0) {
+            similarGamesContainer.innerHTML = ''; // Limpiar contenido anterior
+            // Mostrar la sección de recomendaciones y el título
+            similarGamesSection.style.display = 'block';
+            similarGamesTitleContainer.style.display = 'block';
+
+            // Mostrar controles del carrusel
+            const prevControl = similarGamesSection.querySelector('.carousel-control-prev');
+            const nextControl = similarGamesSection.querySelector('.carousel-control-next');
+            if (prevControl) prevControl.style.display = 'block';
+            if (nextControl) nextControl.style.display = 'block';
+
+            const gamesPerSlide = 3; // Mostrar 3 juegos por slide del carrusel
+            let gameCounter = 0;
+
+            for (let i = 0; i < data.similar_games.length; i += gamesPerSlide) {
+                const carouselItem = document.createElement('div');
+                carouselItem.classList.add('carousel-item');
+                if (i === 0) {
+                    carouselItem.classList.add('active');
+                }
+
+                const row = document.createElement('div');
+                row.classList.add('row');
+
+                for (let j = 0; j < gamesPerSlide && (i + j) < data.similar_games.length; j++) {
+                    const game = data.similar_games[i + j];
+                    
+                    const col = document.createElement('div');
+                    col.classList.add('col-md-4', 'mb-3', 'aventura-card-wrapper'); // mb-3 para espacio si se apilan en movil
+
+                    const gameCardLink = document.createElement('a');
+                    gameCardLink.href = `../Products/product.html?game_id=${game.appid}`; //
+                    gameCardLink.classList.add('aventura-card'); //
+                    gameCardLink.style.textDecoration = 'none';
+
+                    const img = document.createElement('img');
+                    img.src = game.portada || 'placeholder.jpg'; //
+                    img.classList.add('aventura-card-img-top');
+                    img.alt = game.nombre; //
+
+                    // Contenido visible de la tarjeta (no el overlay de hover)
+                    const cardContent = document.createElement('div');
+                    cardContent.classList.add('aventura-card-content');
+
+                    const title = document.createElement('h5');
+                    title.classList.add('aventura-card-title');
+                    title.textContent = game.nombre; //
+                    
+                    const priceText = document.createElement('p');
+                    priceText.classList.add('aventura-card-price');
+                    if (game.resumen_precio && game.resumen_precio.final_formatted) { //
+                        priceText.textContent = game.resumen_precio.final_formatted; //
+                    } else if (game.precio === null || game.precio === 0) { //
+                        priceText.textContent = 'Gratis'; //
+                    } else {
+                        priceText.textContent = 'Precio no disponible';
+                    }
+                    
+                    // Ribbon para el precio (opcional, si prefieres el precio en el ribbon)
+                    // Si decides usar el ribbon para el precio, puedes quitar el 'aventura-card-price' de arriba
+                    // y descomentar/adaptar lo siguiente:
+                    /*
+                    const ribbon = document.createElement('div');
+                    ribbon.classList.add('card-ribbon');
+                    if (game.resumen_precio && game.resumen_precio.final_formatted) {
+                        ribbon.textContent = game.resumen_precio.final_formatted;
+                    } else if (game.precio === null || game.precio === 0) {
+                        ribbon.textContent = 'Gratis';
+                    } else {
+                        ribbon.textContent = '-'; // O vacío si no hay precio
+                    }
+                    gameCardLink.appendChild(ribbon);
+                    */
+
+
+                    // Overlay (simplificado, ya que el título principal está visible)
+                    // Podrías añadir una descripción corta aquí si la API la proporciona consistentemente
+                    // y si quieres que aparezca al hacer hover. El CSS ya lo contempla.
+                    // const hoverOverlay = document.createElement('div');
+                    // hoverOverlay.classList.add('card-body-overlay'); // o card-hover si usas ese CSS
+                    // const hoverTitle = document.createElement('h5');
+                    // hoverTitle.classList.add('card-title-overlay'); // o card-title si usas ese CSS
+                    // hoverTitle.textContent = game.nombre;
+                    // hoverOverlay.appendChild(hoverTitle);
+
+                    cardContent.appendChild(title);
+                    cardContent.appendChild(priceText);
+
+                    gameCardLink.appendChild(img);
+                    gameCardLink.appendChild(cardContent);
+                    // gameCardLink.appendChild(hoverOverlay); // Si usas el overlay
+
+                    col.appendChild(gameCardLink);
+                    row.appendChild(col);
+                }
+                carouselItem.appendChild(row);
+                similarGamesContainer.appendChild(carouselItem);
+            }
+        } else {
+            similarGamesContainer.innerHTML = '<p class="text-light text-center p-3">No hay recomendaciones similares disponibles para este juego.</p>';
+            similarGamesTitleContainer.style.display = 'block';
+            similarGamesSection.style.display = 'block';
+            const prevControl = similarGamesSection.querySelector('.carousel-control-prev');
+            const nextControl = similarGamesSection.querySelector('.carousel-control-next');
+            if (prevControl) prevControl.style.display = 'none';
+            if (nextControl) nextControl.style.display = 'none';
+        }
+
+    } catch (error) {
+        console.error("Error al obtener las recomendaciones de juegos similares:", error);
+        similarGamesContainer.innerHTML = '<p class="text-light text-center p-3">No se pudieron cargar las recomendaciones.</p>';
+        similarGamesTitleContainer.style.display = 'block';
+        similarGamesSection.style.display = 'block';
+        const prevControl = similarGamesSection.querySelector('.carousel-control-prev');
+        const nextControl = similarGamesSection.querySelector('.carousel-control-next');
+        if (prevControl) prevControl.style.display = 'none';
+        if (nextControl) nextControl.style.display = 'none';
+    }
+}
 
 async function loadProductDetails() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -404,12 +626,30 @@ async function loadProductDetails() {
 
     if (gameId) {
         const gameData = await fetchGameDetails(gameId);
-        displayGameDetails(gameData);
+        if (gameData) { 
+            displayGameDetails(gameData); //
+            document.title = gameData.nombre || "Detalles del Juego"; 
+
+            const similarTitleEl = document.getElementById("similarGamesTitle");
+            if (similarTitleEl && gameData.nombre) {
+                similarTitleEl.textContent = `Juegos similares a "${gameData.nombre}"`;
+            }
+            // Llamar a las funciones para cargar datos adicionales en paralelo para eficiencia
+            await Promise.all([
+                fetchAndDisplaySimilarGames(gameId),
+                fetchAndDisplayAggregateInteractions(gameId) // <--- NUEVA LLAMADA
+            ]);
+        } else {
+            document.title = "Juego no encontrado"; // Actualiza el título de la página si gameData es null
+            // displayGameDetails ya maneja el caso de gameData nulo mostrando un mensaje.
+        }
     } else {
         console.error("No se encontró el ID del juego (game_id) en la URL.");
         gameHighlightDiv.innerHTML = '<p class="text-light text-center p-5">Lo sentimos, no se especificó un juego para mostrar. Por favor, asegúrate de que la URL contenga un parámetro "game_id".</p>';
+        document.title = "Error - Juego no especificado"; // Actualiza el título de la página
     }
 }
+
 
 document.addEventListener("DOMContentLoaded", async function () {
     const user = JSON.parse(localStorage.getItem("usuario"));
@@ -418,6 +658,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     if (cuentaMenu && cuentaOpciones) {
         if (user) {
+            currentUserId = user.id; // Almacenar el ID del usuario globalmente si está logeado
             cuentaMenu.textContent = `Hola, ${user.nombre}`;
             cuentaOpciones.innerHTML = `
                 <a class="dropdown-item menuItem" href="#" onclick="logout()">Cerrar sesión</a>
@@ -430,6 +671,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             `;
         }
 
+        // Hover para dropdown (existente)
         document.querySelectorAll('.nav-item.dropdown').forEach(item => {
             item.addEventListener('mouseenter', () => {
                 item.classList.add('show');
@@ -446,5 +688,5 @@ document.addEventListener("DOMContentLoaded", async function () {
         console.warn("Elementos de menú de cuenta no encontrados. La funcionalidad de usuario puede estar limitada.");
     }
 
-    await loadProductDetails();
+    await loadProductDetails(); //
 });
