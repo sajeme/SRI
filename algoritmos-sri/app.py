@@ -1,7 +1,5 @@
-
-
-import locale # Import locale for date parsing
-import dateparser # Import dateparser for flexible date parsing
+import locale
+import dateparser
 import json
 import pandas as pd
 import numpy as np
@@ -9,20 +7,14 @@ from flask_cors import CORS
 import random
 from collections import defaultdict
 from typing import List, Dict, Any, Tuple
-from datetime import datetime # Import datetime for date parsing
+from datetime import datetime
 from flask import Flask, request, jsonify
 
 # Importar las bibliotecas específicas de cada módulo
-# Para recomendacion_asociacion.py
 from mlxtend.frequent_patterns import apriori, association_rules
-
-# Para recomendacion_contenido_usuario.py
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
-
-# Para recomendaciones_colaborativo_surprise.py
 from surprise import Dataset, Reader, KNNBasic, SVD
-
 
 # Configuración de la localización para parsear fechas con meses en español
 try:
@@ -33,38 +25,8 @@ except locale.Error:
     except locale.Error:
         print("Advertencia: No se pudo establecer la localización 'es_ES'. Las fechas pueden no parsearse correctamente sin dateparser.")
 
-
 app = Flask(__name__)
 CORS(app)
-# --- Variables Globales para cargar datos una sola vez ---
-interacciones_data: Dict = {} #POR SI PETA ALGO ERA interacciones_data: Dict = {}
-datos_juegos_data: Dict = {}
-usuarios_data: Dict = {}
-
-# Para Apriori
-game_id_to_name: Dict[str, str] = {}
-name_to_game_id: Dict[str, str] = {}
-rules: pd.DataFrame = pd.DataFrame()
-
-# Para Cold Start (original) - keeping for reference, but new cold start will use juegos_dict etc.
-cold_start_recommender = None # Se inicializará como una instancia de ColdStartRecommender
-
-# Para Contenido (TF-IDF)
-games_df_content: pd.DataFrame = pd.DataFrame()
-tfidf_matrix = None
-content_similarity_df: pd.DataFrame = pd.DataFrame()
-
-# Para Colaborativo (Surprise)
-surprise_formatted_data: List[Tuple[int, int, float]] = []
-item_similarity_model = None
-trainset_global = None
-
-# --- Variables Globales para el algoritmo de Boosting (desde recommender_boosting_flask.py) ---
-juegos_dict: Dict = {} # Almacenará los datos de juegos procesados
-usuarios_dict: Dict = {} # Almacenará los datos de usuarios procesados
-juego_interacciones: Dict = defaultdict(list) # Almacenará interacciones por juego
-game_average_rating: Dict = {} # Almacenará la calificación promedio de los juegos
-
 
 # --- Funciones Auxiliares Comunes ---
 def load_json_data(filepath: str) -> Dict:
@@ -79,93 +41,38 @@ def load_json_data(filepath: str) -> Dict:
         print(f"Error: No se pudo decodificar JSON desde '{filepath}'. Verifica el formato del archivo.")
         return {}
 
+def _load_base_json_data():
+    """Carga los datos base de interacciones, juegos y usuarios."""
+    interacciones = load_json_data('interacciones.json')
+    juegos = load_json_data('datos_juegos.json')
+    usuarios = load_json_data('usuarios.json')
+    return interacciones, juegos, usuarios
 
-# --- Lógica de Inicialización de todos los Modelos y Carga de Datos ---
-def initialize_models_and_data():
-    global interacciones_data, datos_juegos_data, usuarios_data
-    global game_id_to_name, name_to_game_id, rules
-    global cold_start_recommender
-    global games_df_content, tfidf_matrix, content_similarity_df
-    global surprise_formatted_data, item_similarity_model, trainset_global
-    global juegos_dict, usuarios_dict, juego_interacciones, game_average_rating # Nuevas variables globales
+# --- Lógica de Preprocesamiento y Entrenamiento por Modelo (llamadas por endpoint) ---
 
-    print("Iniciando carga de datos y pre-cálculo de modelos...")
-
-    # Carga de datos base (comunes a varios módulos)
-    interacciones_data = load_json_data('interacciones.json')
-    datos_juegos_data = load_json_data('datos_juegos.json')
-    usuarios_data = load_json_data('usuarios.json')
-
-    if not (interacciones_data and datos_juegos_data and usuarios_data):
-        print("Advertencia: No se pudieron cargar todos los archivos JSON necesarios. Algunas recomendaciones pueden no funcionar.")
-
-    # --- Preprocesamiento de datos para el algoritmo de Boosting (desde recommender_boosting_flask.py) ---
-    print("Preparando datos para el algoritmo de Boosting...")
-    if usuarios_data.get("usuarios"):
-        usuarios_dict.update({user["id"]: user for user in usuarios_data["usuarios"]})
-
-    for appid_str, game_info_raw in datos_juegos_data.items():
-        appid = int(appid_str)
-        
-        game_tags = [tag['description'].lower() for tag in game_info_raw.get('tags', [])]
-        game_categories = [cat.lower() for cat in game_info_raw.get('categorias', [])]
-        all_genres_tags = list(set(game_tags + game_categories)) # Combina tags y categorías
-
-        fecha_publicacion_str = game_info_raw.get("fecha_publicacion")
-        fecha_lanzamiento = None
-        if fecha_publicacion_str:
-            parsed_date = dateparser.parse(fecha_publicacion_str, languages=["es"])
-            if parsed_date:
-                fecha_lanzamiento = parsed_date.strftime("%Y-%m-%d")
-
-        processed_game_info = game_info_raw.copy()
-        processed_game_info["id_juego"] = appid
-        processed_game_info["generos"] = all_genres_tags
-        processed_game_info["fecha_lanzamiento"] = fecha_lanzamiento
-        processed_game_info.pop("fecha_publicacion", None)
-        processed_game_info.pop("tags", None)
-        processed_game_info.pop("categorias", None)
-
-        juegos_dict[appid] = processed_game_info
-
-    for user_interaction_set in interacciones_data.get("interacciones", []):
-        for interaction in user_interaction_set["interacciones"]:
-            game_id = interaction["id_juego"]
-            if game_id in juegos_dict:
-                juego_interacciones[game_id].append({"id_usuario": user_interaction_set["id"], **interaction})
-
-    for game_id, interactions in juego_interacciones.items():
-        valid_ratings = [inter["calificacion"] for inter in interactions if "calificacion" in inter]
-        if valid_ratings:
-            game_average_rating[game_id] = sum(valid_ratings) / len(valid_ratings)
-        else:
-            game_average_rating[game_id] = 0.0
-    print("Datos para el algoritmo de Boosting preparados.")
-
-    # --- Inicialización para Apriori (recomendacion_asociacion.py) ---
-    print("Preparando Apriori...")
-    if datos_juegos_data:
-        game_id_to_name = {str(game_id): details['nombre'] for game_id, details in datos_juegos_data.items()}
-        name_to_game_id = {details['nombre']: str(game_id) for game_id, details in datos_juegos_data.items()}
+def prepare_apriori_models(interacciones_data: Dict, datos_juegos_data: Dict):
+    """Prepara y entrena el modelo Apriori."""
+    game_id_to_name = {str(game_id): details['nombre'] for game_id, details in datos_juegos_data.items()}
+    name_to_game_id = {details['nombre']: str(game_id) for game_id, details in datos_juegos_data.items()}
 
     user_game_matrix = {}
-    if interacciones_data:
-        for user_interaction in interacciones_data.get('interacciones', []):
-            user_id = user_interaction.get('id')
-            if user_id is None:
-                continue
-            user_game_matrix[user_id] = {}
-            for interaction in user_interaction.get('interacciones', []):
-                game_id = str(interaction.get('id_juego'))
-                game_name = game_id_to_name.get(game_id, f"Juego Desconocido ({game_id})")
+    for user_interaction in interacciones_data.get('interacciones', []):
+        user_id = user_interaction.get('id')
+        if user_id is None:
+            continue
+        user_game_matrix[user_id] = {}
+        for interaction in user_interaction.get('interacciones', []):
+            game_id = str(interaction.get('id_juego'))
+            game_name = game_id_to_name.get(game_id, f"Juego Desconocido ({game_id})")
 
-                if (interaction.get('calificacion', 0) >= 3.5 or interaction.get('like', False)):
-                    user_game_matrix[user_id][game_name] = 1
-                else:
-                    user_game_matrix[user_id][game_name] = 0
+            if (interaction.get('calificacion', 0) >= 3.5 or interaction.get('like', False)):
+                user_game_matrix[user_id][game_name] = 1
+            else:
+                user_game_matrix[user_id][game_name] = 0
 
     df_games = pd.DataFrame.from_dict(user_game_matrix, orient='index').fillna(0).astype(bool)
 
+    rules = pd.DataFrame()
     if not df_games.empty:
         try:
             frequent_itemsets = apriori(df_games, min_support=0.01, use_colnames=True)
@@ -173,12 +80,12 @@ def initialize_models_and_data():
             print(f"Apriori: {len(frequent_itemsets)} itemsets frecuentes, {len(rules)} reglas de asociación.")
         except Exception as e:
             print(f"Error al generar reglas de asociación Apriori: {e}")
-            rules = pd.DataFrame()
     else:
         print("Apriori: Matriz de usuario-juego vacía, no se generaron reglas.")
+    return rules, game_id_to_name, name_to_game_id
 
-    # --- Inicialización para Cold Start (recomendacion_coldstart_edad_categorias.py) ---
-    print("Preparando Cold Start Recommender...")
+def prepare_cold_start_recommender(interacciones_data: Dict, datos_juegos_data: Dict, usuarios_data: Dict):
+    """Prepara y entrena el Cold Start Recommender."""
     class ColdStartRecommender:
         def __init__(self):
             self.user_profiles: Dict[int, Dict] = {}
@@ -203,8 +110,8 @@ def initialize_models_and_data():
                     'tags': tags,
                     'edad_minima': edad_minima
                 }
-            print(f"Cold Start: Cargados {len(self.game_features)} juegos.")
-        
+            # print(f"Cold Start: Cargados {len(self.game_features)} juegos.")
+
         def load_user_data_from_json(self, users_data_loaded: Dict):
             for user_profile in users_data_loaded.get("usuarios", []):
                 user_id = user_profile.get("id")
@@ -214,7 +121,7 @@ def initialize_models_and_data():
                         'edad': user_profile.get("edad", 0),
                         'generos_favoritos': user_profile.get("generos_favoritos", [])
                     }
-            print(f"Cold Start: Cargados {len(self.user_profiles)} usuarios.")
+            # print(f"Cold Start: Cargados {len(self.user_profiles)} usuarios.")
 
         def calculate_category_weights_from_interactions(self, interactions_data_loaded: Dict):
             category_ratings_sum = defaultdict(float)
@@ -251,7 +158,7 @@ def initialize_models_and_data():
                 else:
                     self.category_weights[category] = 0.5
 
-            print(f"Cold Start: Pesos de categorías actualizados.")
+            # print(f"Cold Start: Pesos de categorías actualizados.")
 
         def recommend_for_user(self, user_id: int, min_n: int = 5, max_n: int = 10) -> List[Dict[str, Any]]:
             if user_id not in self.user_profiles:
@@ -312,24 +219,23 @@ def initialize_models_and_data():
     cold_start_recommender.load_game_data_from_json(datos_juegos_data)
     cold_start_recommender.calculate_category_weights_from_interactions(interacciones_data)
     cold_start_recommender.load_user_data_from_json(usuarios_data)
-    print("Cold Start Recommender listo.")
+    return cold_start_recommender
 
-    # --- Inicialización para Contenido (recomendacion_contenido_usuario.py) ---
-    print("Preparando recomendaciones basadas en Contenido...")
+def prepare_content_based_models(datos_juegos_data: Dict):
+    """Prepara el modelo de similitud de contenido (TF-IDF)."""
     game_content_list = []
     game_ids_ordered = []
 
-    if datos_juegos_data:
-        for game_id, details in datos_juegos_data.items():
-            content_words = []
-            if 'categorias' in details and details['categorias']:
-                content_words.extend([cat.lower().replace(' ', '_') for cat in details['categorias']])
-            if 'tags' in details and details['tags']:
-                content_words.extend([tag['description'].lower().replace(' ', '_') for tag in details['tags']])
-            
-            if content_words:
-                game_content_list.append(" ".join(content_words))
-                game_ids_ordered.append(str(game_id))
+    for game_id, details in datos_juegos_data.items():
+        content_words = []
+        if 'categorias' in details and details['categorias']:
+            content_words.extend([cat.lower().replace(' ', '_') for cat in details['categorias']])
+        if 'tags' in details and details['tags']:
+            content_words.extend([tag['description'].lower().replace(' ', '_') for tag in details['tags']])
+        
+        if content_words:
+            game_content_list.append(" ".join(content_words))
+            game_ids_ordered.append(str(game_id))
 
     games_df_content = pd.DataFrame({
         'game_id': game_ids_ordered,
@@ -337,6 +243,8 @@ def initialize_models_and_data():
     })
     games_df_content.set_index('game_id', inplace=True)
 
+    tfidf_matrix = None
+    content_similarity_df = pd.DataFrame()
     if not games_df_content.empty:
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform(games_df_content['content'])
@@ -345,59 +253,93 @@ def initialize_models_and_data():
         content_similarity_df = pd.DataFrame(content_similarity_matrix, 
                                             index=games_df_content.index, 
                                             columns=games_df_content.index)
-        print("Recomendaciones de Contenido: Matriz de similitud calculada.")
+        # print("Recomendaciones de Contenido: Matriz de similitud calculada.")
     else:
         print("Recomendaciones de Contenido: No hay contenido de juego disponible para calcular la similitud.")
+    return content_similarity_df, games_df_content
 
-    # --- Inicialización para Colaborativo (recomendaciones_colaborativo_surprise.py) ---
-    print("Preparando modelos colaborativos...")
-    def prepare_surprise_data(
-        interactions_data_loaded: Dict,
-        games_data_loaded: Dict, # No se usa directamente aquí, pero se mantiene para consistencia
-        users_data_loaded: Dict # No se usa directamente aquí, pero se mantiene para consistencia
-    ) -> List[Tuple[int, int, float]]:
-        surprise_data = []
-        for user_interaction_entry in interactions_data_loaded.get("interacciones", []):
-            user_id = user_interaction_entry.get("id")
-            if user_id is None:
-                continue
+def prepare_surprise_data_and_models(interacciones_data: Dict):
+    """Prepara los datos para Surprise y entrena el modelo KNN básico (item-based)."""
+    surprise_formatted_data = []
+    for user_interaction_entry in interacciones_data.get("interacciones", []):
+        user_id = user_interaction_entry.get("id")
+        if user_id is None:
+            continue
 
-            for game_interaction in user_interaction_entry.get("interacciones", []):
-                game_appid = str(game_interaction.get("id_juego"))
-                raw_rating = game_interaction.get("calificacion")
-                
-                try:
-                    rating = float(raw_rating)
-                    if not (0 <= rating <= 5):
-                        continue
-                except (ValueError, TypeError):
-                    continue
-                surprise_data.append((user_id, int(game_appid), rating))
-        return surprise_data
-
-    if interacciones_data and datos_juegos_data and usuarios_data:
-        surprise_formatted_data = prepare_surprise_data(
-            interacciones_data,
-            datos_juegos_data,
-            usuarios_data
-        )
-        
-        if surprise_formatted_data:
-            df_global = pd.DataFrame(surprise_formatted_data, columns=['userID', 'itemID', 'rating'])
-            reader_global = Reader(rating_scale=(0, 5))
-            dataset_global = Dataset.load_from_df(df_global, reader_global)
-            trainset_global = dataset_global.build_full_trainset()
+        for game_interaction in user_interaction_entry.get("interacciones", []):
+            game_appid = str(game_interaction.get("id_juego"))
+            raw_rating = game_interaction.get("calificacion")
             
-            sim_options_global = {'name': 'cosine', 'user_based': False}
-            item_similarity_model = KNNBasic(sim_options=sim_options_global)
-            item_similarity_model.fit(trainset_global)
-            print("Modelos colaborativos: Modelo de similitud de ítems pre-entrenado.")
-        else:
-            print("Modelos colaborativos: No hay datos suficientes para entrenar el modelo de similitud de ítems.")
-    else:
-        print("Modelos colaborativos: Fallo al cargar datos para entrenar.")
+            try:
+                rating = float(raw_rating)
+                if not (0 <= rating <= 5):
+                    continue
+            except (ValueError, TypeError):
+                continue
+            surprise_formatted_data.append((user_id, int(game_appid), rating))
     
-    print("Todos los modelos y datos pre-cargados listos.")
+    item_similarity_model = None
+    trainset_global = None
+    if surprise_formatted_data:
+        df_global = pd.DataFrame(surprise_formatted_data, columns=['userID', 'itemID', 'rating'])
+        reader_global = Reader(rating_scale=(0, 5))
+        dataset_global = Dataset.load_from_df(df_global, reader_global)
+        trainset_global = dataset_global.build_full_trainset()
+        
+        sim_options_global = {'name': 'cosine', 'user_based': False}
+        item_similarity_model = KNNBasic(sim_options=sim_options_global)
+        item_similarity_model.fit(trainset_global)
+        # print("Modelos colaborativos: Modelo de similitud de ítems pre-entrenado.")
+    else:
+        print("Modelos colaborativos: No hay datos suficientes para entrenar el modelo de similitud de ítems.")
+    
+    return surprise_formatted_data, item_similarity_model, trainset_global
+
+def prepare_boosting_data(interacciones_data: Dict, datos_juegos_data: Dict, usuarios_data: Dict):
+    """Prepara los datos para el algoritmo de Boosting."""
+    juegos_dict = {}
+    usuarios_dict = {user["id"]: user for user in usuarios_data.get("usuarios", [])}
+    juego_interacciones = defaultdict(list)
+    game_average_rating = {}
+
+    for appid_str, game_info_raw in datos_juegos_data.items():
+        appid = int(appid_str)
+        
+        game_tags = [tag['description'].lower() for tag in game_info_raw.get('tags', [])]
+        game_categories = [cat.lower() for cat in game_info_raw.get('categorias', [])]
+        all_genres_tags = list(set(game_tags + game_categories))
+
+        fecha_publicacion_str = game_info_raw.get("fecha_publicacion")
+        fecha_lanzamiento = None
+        if fecha_publicacion_str:
+            parsed_date = dateparser.parse(fecha_publicacion_str, languages=["es"])
+            if parsed_date:
+                fecha_lanzamiento = parsed_date.strftime("%Y-%m-%d")
+
+        processed_game_info = game_info_raw.copy()
+        processed_game_info["id_juego"] = appid
+        processed_game_info["generos"] = all_genres_tags
+        processed_game_info["fecha_lanzamiento"] = fecha_lanzamiento
+        processed_game_info.pop("fecha_publicacion", None)
+        processed_game_info.pop("tags", None)
+        processed_game_info.pop("categorias", None)
+
+        juegos_dict[appid] = processed_game_info
+
+    for user_interaction_set in interacciones_data.get("interacciones", []):
+        for interaction in user_interaction_set["interacciones"]:
+            game_id = interaction["id_juego"]
+            if game_id in juegos_dict:
+                juego_interacciones[game_id].append({"id_usuario": user_interaction_set["id"], **interaction})
+
+    for game_id, interactions in juego_interacciones.items():
+        valid_ratings = [inter["calificacion"] for inter in interactions if "calificacion" in inter]
+        if valid_ratings:
+            game_average_rating[game_id] = sum(valid_ratings) / len(valid_ratings)
+        else:
+            game_average_rating[game_id] = 0.0
+    
+    return juegos_dict, usuarios_dict, juego_interacciones, game_average_rating
 
 
 # --- Funciones de Recomendación (extraídas de los archivos originales) ---
@@ -471,7 +413,7 @@ def recomendar_juegos_apriori(
 
 
 # --- Desde recomendacion_contenido_usuario.py ---
-def recomendar_juegos_tfidf(user_id, all_interactions, all_games_data, content_sim_df, game_id_to_name_map, top_n=5):
+def recomendar_juegos_tfidf(user_id, all_interactions, all_games_data, content_sim_df, games_df_content, top_n=5):
     
     if all_interactions is None or all_games_data is None or content_sim_df is None or content_sim_df.empty:
         return {"error": "Los datos necesarios para las recomendaciones no están disponibles. Asegúrate de que los archivos JSON se hayan cargado correctamente y que el DataFrame de similitud no esté vacío."}
@@ -500,7 +442,7 @@ def recomendar_juegos_tfidf(user_id, all_interactions, all_games_data, content_s
         return []
 
     predicted_scores = {}
-    for game_id_to_predict in games_df_content.index:
+    for game_id_to_predict in games_df_content.index: # Usa games_df_content para iterar sobre los juegos disponibles
         if game_id_to_predict not in played_game_ids:
             sim_sum = 0
             weighted_score_sum = 0
@@ -736,9 +678,11 @@ def get_top_rated_games(interacciones_data_loaded: Dict, datos_juegos_data_loade
         count = game_ratings_count[game_id]
         if count > 0:
             game_average_ratings[game_id] = total_rating / count
+        else: # Si no hay calificaciones, asigna 0.0 para evitar divisiones por cero
+            game_average_ratings[game_id] = 0.0
 
     sorted_games_by_average_rating = sorted(
-        [item for item in game_average_ratings.items() if item[1] > 0],
+        [item for item in game_average_ratings.items() if item[1] > 0], # Filtra juegos con rating > 0
         key=lambda item: item[1],
         reverse=True
     )
@@ -754,6 +698,8 @@ def get_top_rated_games(interacciones_data_loaded: Dict, datos_juegos_data_loade
 
 # --- Función de Recomendación General con Boosting (desde recommender_boosting_flask.py) ---
 def get_general_cold_start_recommendations(
+    juegos_dict: Dict,
+    game_average_rating: Dict,
     num_recommendations=5,
     target_category=None,
     date_start=None,
@@ -778,8 +724,8 @@ def get_general_cold_start_recommendations(
             print(f"Error: Formato de fecha inválido para el rango {date_start} a {date_end}. Usa 'YYYY-MM-DD'.")
             return []
 
-    for game_id, game_info in juegos_dict.items(): # Usa el global juegos_dict
-        base_score = game_average_rating.get(game_id, 0.0) # Usa el global game_average_rating
+    for game_id, game_info in juegos_dict.items():
+        base_score = game_average_rating.get(game_id, 0.0)
 
         category_match = False
         if target_category:
@@ -853,7 +799,9 @@ def get_general_cold_start_recommendations(
 def global_most_played_games_endpoint():
     """
     Endpoint para obtener los 10 juegos más jugados/interactuados globalmente.
+    Recarga interacciones y datos de juegos en cada solicitud.
     """
+    interacciones_data, datos_juegos_data, _ = _load_base_json_data()
     recommendations = get_most_played_games(interacciones_data, datos_juegos_data)
 
     if not recommendations:
@@ -866,7 +814,9 @@ def global_top_rated_games_endpoint():
     """
     Endpoint para obtener los 10 juegos mejor valorados globalmente
     basados en su calificación promedio.
+    Recarga interacciones y datos de juegos en cada solicitud.
     """
+    interacciones_data, datos_juegos_data, _ = _load_base_json_data()
     recommendations = get_top_rated_games(interacciones_data, datos_juegos_data)
 
     if not recommendations:
@@ -879,7 +829,11 @@ def global_top_rated_games_endpoint():
 def get_apriori_recommendations_endpoint(user_id):
     """
     Endpoint para obtener recomendaciones de juegos basadas en reglas de asociación (Apriori) para un usuario específico.
+    Carga datos y entrena el modelo Apriori en cada solicitud.
     """
+    interacciones_data, datos_juegos_data, _ = _load_base_json_data()
+    rules, game_id_to_name, name_to_game_id = prepare_apriori_models(interacciones_data, datos_juegos_data)
+
     if rules.empty:
         return jsonify({"error": "No se han cargado reglas de asociación o no se pudieron generar."}), 500
 
@@ -908,9 +862,10 @@ def get_cold_start_recommendations_endpoint(user_id):
     """
     Endpoint para obtener recomendaciones para usuarios en "cold start"
     basadas en sus datos de perfil (edad, géneros favoritos).
+    Carga datos y prepara el Cold Start Recommender en cada solicitud.
     """
-    if cold_start_recommender is None:
-        return jsonify({"error": "El sistema de recomendación Cold Start no está inicializado."}), 500
+    interacciones_data, datos_juegos_data, usuarios_data = _load_base_json_data()
+    cold_start_recommender = prepare_cold_start_recommender(interacciones_data, datos_juegos_data, usuarios_data)
 
     try:
         user_exists = any(u['id'] == user_id for u in usuarios_data.get('usuarios', []))
@@ -936,17 +891,21 @@ def user_content_recommendations_endpoint(user_id):
     """
     Endpoint para obtener recomendaciones de juegos basadas en contenido
     para un usuario específico.
+    Carga datos y prepara el modelo de contenido en cada solicitud.
     """
+    interacciones_data, datos_juegos_data, usuarios_data = _load_base_json_data()
     user_exists = any(u['id'] == user_id for u in usuarios_data.get('usuarios', []))
     if not user_exists:
         return jsonify({"error": f"El usuario con ID {user_id} no se encuentra en la base de datos."}), 404
+
+    content_similarity_df, games_df_content = prepare_content_based_models(datos_juegos_data)
 
     recommendations = recomendar_juegos_tfidf(
         user_id,
         interacciones_data,
         datos_juegos_data,
         content_similarity_df,
-        game_id_to_name,
+        games_df_content, # Pasar games_df_content
         top_n=10
     )
 
@@ -960,7 +919,12 @@ def user_content_recommendations_endpoint(user_id):
 def get_user_based_recommendations_endpoint(user_id):
     """
     Endpoint para obtener recomendaciones colaborativas basadas en usuario para un usuario específico.
+    Carga datos y entrena el modelo KNN user-based en cada solicitud.
+    Si no hay interacciones para el usuario, devuelve juegos populares.
     """
+    interacciones_data, datos_juegos_data, usuarios_data = _load_base_json_data()
+    surprise_formatted_data, _, _ = prepare_surprise_data_and_models(interacciones_data) 
+
     if not surprise_formatted_data:
         return jsonify({"error": "Datos no cargados para recomendaciones colaborativas."}), 500
 
@@ -969,16 +933,69 @@ def get_user_based_recommendations_endpoint(user_id):
         return jsonify({"error": f"El usuario con ID {user_id} no se encuentra en la base de datos."}), 404
 
     recommendations = recommend_user_based(surprise_formatted_data, datos_juegos_data, user_id)
+    
     if not recommendations:
-        return jsonify({"user_id": user_id, "recommendations": [], "message": f"No se encontraron recomendaciones colaborativas User-Based para el usuario ID: {user_id}. Es posible que no haya suficientes usuarios similares o interacciones."}), 404
+        # Si no se encontraron recomendaciones User-Based, proporcionar un fallback de juegos populares
+        print(f"No se encontraron recomendaciones User-Based para el usuario ID: {user_id}. Proporcionando fallback de juegos populares.")
         
+        most_played = get_most_played_games(interacciones_data, datos_juegos_data, limit=10)
+        top_rated = get_top_rated_games(interacciones_data, datos_juegos_data, limit=10)
+        
+        fallback_recommendations = []
+        seen_game_ids = set()
+        
+        # Intercalar recomendaciones de 5 a 10
+        max_fallback_recs = random.randint(5, 10)
+        
+        i, j = 0, 0
+        while len(fallback_recommendations) < max_fallback_recs and (i < len(top_rated) or j < len(most_played)):
+            if i < len(top_rated):
+                game = top_rated[i]
+                if game['id'] not in seen_game_ids:
+                    fallback_recommendations.append(game)
+                    seen_game_ids.add(game['id'])
+                i += 1
+            
+            if len(fallback_recommendations) < max_fallback_recs and j < len(most_played):
+                game = most_played[j]
+                if game['id'] not in seen_game_ids:
+                    fallback_recommendations.append(game)
+                    seen_game_ids.add(game['id'])
+                j += 1
+        
+        # Si aún no hay suficientes, añadir el resto de los más jugados/mejor puntuados sin orden específico
+        # (esto es poco probable si ya se intercala, pero como seguridad)
+        remaining_games = []
+        if i < len(top_rated):
+            remaining_games.extend(top_rated[i:])
+        if j < len(most_played):
+            remaining_games.extend(most_played[j:])
+        
+        for game in remaining_games:
+            if len(fallback_recommendations) < max_fallback_recs and game['id'] not in seen_game_ids:
+                fallback_recommendations.append(game)
+                seen_game_ids.add(game['id'])
+        
+        if not fallback_recommendations:
+            return jsonify({
+                "user_id": user_id,
+                "recommendations": [],
+                "message": f"No se encontraron recomendaciones User-Based para el usuario ID: {user_id}, y no se pudieron generar recomendaciones populares como fallback."
+            }), 404
+        
+        return jsonify({"user_id": user_id, "recommendations": fallback_recommendations, "message": "Recomendaciones populares como fallback."})
+
     return jsonify({"user_id": user_id, "recommendations": recommendations})
 
 @app.route('/recommendations/collaborative/item-based/<int:user_id>', methods=['GET'])
 def get_item_based_recommendations_endpoint(user_id):
     """
     Endpoint para obtener recomendaciones colaborativas basadas en ítem para un usuario específico.
+    Carga datos y entrena el modelo KNN item-based en cada solicitud.
     """
+    interacciones_data, datos_juegos_data, usuarios_data = _load_base_json_data()
+    surprise_formatted_data, _, _ = prepare_surprise_data_and_models(interacciones_data) # No necesitamos el modelo de ítems aquí
+
     if not surprise_formatted_data:
         return jsonify({"error": "Datos no cargados para recomendaciones colaborativas."}), 500
 
@@ -996,7 +1013,11 @@ def get_item_based_recommendations_endpoint(user_id):
 def get_svd_recommendations_endpoint(user_id):
     """
     Endpoint para obtener recomendaciones colaborativas SVD para un usuario específico.
+    Carga datos y entrena el modelo SVD en cada solicitud.
     """
+    interacciones_data, datos_juegos_data, usuarios_data = _load_base_json_data()
+    surprise_formatted_data, _, _ = prepare_surprise_data_and_models(interacciones_data) # No necesitamos el modelo de ítems aquí
+
     if not surprise_formatted_data:
         return jsonify({"error": "Datos no cargados para recomendaciones colaborativas."}), 500
 
@@ -1014,7 +1035,11 @@ def get_svd_recommendations_endpoint(user_id):
 def get_similar_games_endpoint_consolidated(game_id):
     """
     Endpoint para obtener juegos similares (basado en colaborativo de ítems) para un juego específico.
+    Carga datos y entrena el modelo KNN item-based en cada solicitud.
     """
+    interacciones_data, datos_juegos_data, _ = _load_base_json_data()
+    surprise_formatted_data, item_similarity_model, trainset_global = prepare_surprise_data_and_models(interacciones_data)
+
     if not item_similarity_model or not trainset_global:
         return jsonify({"error": "Modelo de similitud de ítems no entrenado o datos no cargados."}), 500
 
@@ -1033,35 +1058,47 @@ def get_similar_games_endpoint_consolidated(game_id):
 def recommend_rpg_games():
     """
     Endpoint para recomendar juegos de 'rol' con boosting, sin filtro de fecha.
+    Carga datos y prepara los datos para boosting en cada solicitud.
     """
+    interacciones_data, datos_juegos_data, usuarios_data = _load_base_json_data()
+    juegos_dict, _, _, game_average_rating = prepare_boosting_data(interacciones_data, datos_juegos_data, usuarios_data)
+
     recommendations = get_general_cold_start_recommendations(
+        juegos_dict,
+        game_average_rating,
         num_recommendations=5,
         target_category="rol",
-        category_boost_factor=2.0, # Strong boost for RPGs
-        strict_category_filter=False # Don't strictly filter, just boost matching ones
+        category_boost_factor=2.0,
+        strict_category_filter=False
     )
     if not recommendations:
         return jsonify({"message": "No se encontraron recomendaciones de juegos de rol."}), 404
-    return jsonify({"recommendations": recommendations}) # Wrapped in "recommendations" key
+    return jsonify({"recommendations": recommendations})
 
 @app.route('/recommend/action2025', methods=['GET'])
 def recommend_action_2025_games():
     """
     Endpoint para recomendar juegos de 'acción' lanzados entre 2025-01-01 y 2025-05-22.
+    Carga datos y prepara los datos para boosting en cada solicitud.
     """
+    interacciones_data, datos_juegos_data, usuarios_data = _load_base_json_data()
+    juegos_dict, _, _, game_average_rating = prepare_boosting_data(interacciones_data, datos_juegos_data, usuarios_data)
+
     recommendations = get_general_cold_start_recommendations(
+        juegos_dict,
+        game_average_rating,
         num_recommendations=5,
         target_category="acción",
         date_start="2025-01-01",
         date_end="2025-05-22",
-        category_boost_factor=1.5, # Boost for action games
-        date_boost_factor=1.8, # Strong boost for date range
-        strict_category_filter=False, # Don't strictly filter action, just boost
-        strict_date_filter=True # Strictly filter by date range
+        category_boost_factor=1.5,
+        date_boost_factor=1.8,
+        strict_category_filter=False,
+        strict_date_filter=True
     )
     if not recommendations:
         return jsonify({"message": "No se encontraron recomendaciones de juegos de acción para el período especificado."}), 404
-    return jsonify({"recommendations": recommendations}) # Wrapped in "recommendations" key
+    return jsonify({"recommendations": recommendations})
 
 
 # Ruta raíz para verificar que la API está activa
@@ -1283,6 +1320,7 @@ def obtener_todos_los_juegos():
 
 # Punto de trada principal para ejecutar la aplicación Flask
 if __name__ == '__main__':
-    # Cargar datos y entrenar modelos una vez al inicio de la aplicación
-    initialize_models_and_data()
+    # No se llama a initialize_models_and_data() aquí.
+    # Cada endpoint cargará y entrenará lo que necesite.
+    print("La API está activa. Los modelos se entrenarán por solicitud en cada endpoint.")
     app.run(debug=True, port=5000)

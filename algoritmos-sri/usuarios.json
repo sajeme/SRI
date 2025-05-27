@@ -695,59 +695,11 @@
     },
     {
       "id": 71,
-      "nombre": "andres",
-      "edad": 45,
+      "nombre": "Pavo Rosaldo",
+      "edad": 20,
       "generos_favoritos": [
-        "Aventura",
-        "Multijugador masivo",
-        "Deportes"
+        "acción"
       ]
-    },
-    {
-      "id": 73,
-      "nombre": "peter",
-      "edad": 12,
-      "generos_favoritos": [
-        "acción",
-        "aventura",
-        "simuladores"
-      ]
-    },
-    {
-      "id": 74,
-      "nombre": "sancho",
-      "edad": 43,
-      "generos_favoritos": [
-        "acción",
-        "simuladores",
-        "aventura"
-      ]
-    },
-    {
-      "id": 75,
-      "nombre": "andr",
-      "edad": 12,
-      "generos_favoritos": [
-        "acción",
-        "aventura"
-      ]
-    },
-    {
-      "id": 76,
-      "nombre": "and2r",
-      "edad": 12,
-      "generos_favoritos": [
-        "indie",
-        "simuladores"
-      ]
-    },
-    {
-      "id": 77,
-      "nombre": "chijuale2r",
-      "edad": 32,
-      "generos_favoritos": [
-        "aventura"
-      ]
-    }
+    }    
   ]
 }
